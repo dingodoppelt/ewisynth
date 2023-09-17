@@ -1,0 +1,86 @@
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix atom: <http://lv2plug.in/ns/ext/atom#> .
+@prefix urid: <http://lv2plug.in/ns/ext/urid#> .
+@prefix midi: <http://lv2plug.in/ns/ext/midi#> .
+
+
+<https://github.com/dingodoppelt/ewisynth> a lv2:Plugin , lv2:OscillatorPlugin , doap:Project ;
+    lv2:binary <ewisynth.so> ;
+    doap:name "ewisynth" ;
+    lv2:optionalFeature lv2:hardRTCapable ;
+    lv2:requiredFeature urid:map ;
+    lv2:minorVersion 2 ;
+    lv2:microVersion 0 ;
+
+
+    lv2:port
+        [
+            a lv2:InputPort , atom:AtomPort ;
+            lv2:index 0 ;
+            lv2:symbol "midi_in" ;
+            lv2:name "MIDI in" ;
+            atom:bufferType atom:Sequence ;
+            atom:supports midi:MidiEvent ;
+        ],
+
+        [
+            a lv2:OutputPort , lv2:AudioPort ;
+            lv2:index 1 ;
+            lv2:symbol "audio_out_l" ;
+            lv2:name "L Audio output" ;
+        ] ,
+
+        [
+            a lv2:OutputPort , lv2:AudioPort ;
+            lv2:index 2 ;
+            lv2:symbol "audio_out_r" ;
+            lv2:name "R Audio output" ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 3 ;
+            lv2:symbol "tune" ;
+            lv2:name "Tune" ;
+            lv2:default 0.0 ;
+            lv2:minimum -20.0 ;
+            lv2:maximum 20.0 ;
+            units:unit   units:pc ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 4 ;
+            lv2:symbol "octave" ;
+            lv2:name "Octave" ;
+            lv2:default 0 ;
+            lv2:minimum -3 ;
+            lv2:maximum 3 ;
+            lv2:portProperty lv2:integer ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 5 ;
+            lv2:symbol "transpose" ;
+            lv2:name "Transpose" ;
+            lv2:default 0 ;
+            lv2:minimum -6 ;
+            lv2:maximum 6 ;
+            units:unit   units:semitone12TET ;
+            lv2:portProperty lv2:integer ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 6 ;
+            lv2:symbol "level" ;
+            lv2:name "Level" ;
+            lv2:default 0.7 ;
+            lv2:minimum 0.0 ;
+            lv2:maximum 1.0 ;
+        ] .
