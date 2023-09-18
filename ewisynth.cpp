@@ -54,7 +54,6 @@ private:
   void handleNoteOn(uint8_t note);
   void handlePressure(const uint8_t pressure);
   void handlePitchbend(const uint16_t pitchbend);
-  float bendrange = 2.f;
   void handleController(const uint8_t controller, const uint8_t value);
   void updateOscillators();
   struct StereoPair {
@@ -186,7 +185,7 @@ void EwiSynth::handlePressure(const uint8_t pressure) {
 }
 
 void EwiSynth::handlePitchbend(const uint16_t pitchbend) {
-  currBendFactor = pow(2., ( (((float)pitchbend - 8192.f) / 8192.f) * 2.f ) / 12.f); // 2^( (pitchbend * bendrange = 2 / max_pitchbend = 16383) / 12 )
+  currBendFactor = pow(2., ((float)pitchbend - 8192.f) / 49152.f); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
   updateOscillators();
 }
 
