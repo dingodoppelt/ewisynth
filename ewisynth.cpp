@@ -1,6 +1,8 @@
 /* include libs */
 #include "lv2.h"
+#include "curves.h"
 #include "variableshapeoscillator.h"
+#include "polyfotz.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -19,8 +21,12 @@ enum ControlPorts {
   CONTROL_TUNE = 0,
   CONTROL_OCTAVE = 1,
   CONTROL_TRANSPOSE = 2,
-  CONTROL_LEVEL = 3,
-  CONTROL_NR = 4
+  CONTROL_GAIN = 3,
+  CONTROL_LEVEL = 4,
+  CONTROL_CURVEX = 5,
+  CONTROL_CURVEY = 6,
+  CONTROL_CURVE = 7,
+  CONTROL_NR = 8
 };
 
 enum PortGroups {
@@ -48,19 +54,25 @@ private:
   float currFrequency = 440.f;
   float currBendFactor = 1.f;
   float currPulseWidth = .5f;
+  float currPressure = .5f;
   VariableShapeOscillator SAWosc[MAX_POLYPHONY];
   VariableShapeOscillator SQRosc[MAX_POLYPHONY];
-  float aft_amt[MAX_POLYPHONY];
   void handleNoteOn(uint8_t note);
   void handlePressure(const uint8_t pressure);
   void handlePitchbend(const uint16_t pitchbend);
   void handleController(const uint8_t controller, const uint8_t value);
   void updateOscillators();
+  void updateControls();
+  PolyFotz polyfotz;
+  Curves curve;
   struct StereoPair {
     float sqr_l = 0.f;
     float saw_r = 0.f;
   };
   StereoPair sumOscillators();
+  float waveshaper(float sample) {
+    return 2/(1+exp(-2*sample))-1;
+  }
 
 public:
   EwiSynth(const double sample_rate, const LV2_Feature *const *features);
@@ -77,12 +89,12 @@ EwiSynth::EwiSynth(const double sample_rate, const LV2_Feature *const *features)
   if (missing)
     throw;
 
+  polyfotz.Init(MAX_POLYPHONY);
   for (int i = 0; i < MAX_POLYPHONY; i++) {
     SAWosc[i].Init(sample_rate);
     SQRosc[i].Init(sample_rate);
     SAWosc[i].SetWaveshape(0);
     SQRosc[i].SetWaveshape(1);
-    aft_amt[i] = sin((M_PI / 2) * i / MAX_POLYPHONY);
   }
 
   urids.midi_MidiEvent = map->map(map->handle, LV2_MIDI__MidiEvent);
@@ -147,6 +159,8 @@ void EwiSynth::run(const uint32_t sample_count) {
       }
     }
   }
+  updateControls();
+  updateOscillators();
   for (int i = 0; i < sample_count; i++) {
     const StereoPair outputs = sumOscillators();
     l_audio_out_ptr[i] = outputs.sqr_l;
@@ -156,37 +170,46 @@ void EwiSynth::run(const uint32_t sample_count) {
 
 EwiSynth::StereoPair EwiSynth::sumOscillators() {
   StereoPair out;
-  for (int i = 0; i < MAX_POLYPHONY; i++) {
+  int poly_ = polyfotz.getPolyphony();
+  for (int i = 0; i < poly_; i++) {
     out.sqr_l +=
-        SQRosc[i].Process() / MAX_POLYPHONY * *control_ptr[CONTROL_LEVEL];
+        SQRosc[i].Process() / poly_ * *control_ptr[CONTROL_GAIN] * currPressure;
     out.saw_r +=
-        SAWosc[i].Process() / MAX_POLYPHONY * *control_ptr[CONTROL_LEVEL];
+        SAWosc[i].Process() / poly_ * *control_ptr[CONTROL_GAIN] * currPressure;
   }
+  out.sqr_l = waveshaper(out.sqr_l) * *control_ptr[CONTROL_LEVEL];
+  out.saw_r = waveshaper(out.saw_r) * *control_ptr[CONTROL_LEVEL];
   return out;
 }
 
 void EwiSynth::updateOscillators() {
-  for (int i = 0; i < MAX_POLYPHONY; i++) {
-    SAWosc[i].SetFreq(currFrequency  * currBendFactor * (powf(2.f, *control_ptr[CONTROL_TUNE])));
-    SQRosc[i].SetFreq(currFrequency  * currBendFactor * (powf(2.f, *control_ptr[CONTROL_TUNE])));
+  for (int i = 0; i < polyfotz.getPolyphony(); i++) {
+    SAWosc[i].SetFreq(polyfotz.getEffectiveFrequency());
+    SQRosc[i].SetFreq(polyfotz.getEffectiveFrequency());
     SAWosc[i].SetPW(currPulseWidth);
-    SQRosc[i].SetPW(currPulseWidth);
+    SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
   }
 }
 
 void EwiSynth::handleNoteOn(const uint8_t note) {
-  currFrequency = (powf(2.f, ((float)note - 69.f + *control_ptr[CONTROL_TRANSPOSE] + (*control_ptr[CONTROL_OCTAVE] * 12.f)) / 12.f) * 440.f);
-  updateOscillators();
+  polyfotz.setNote(note);
 }
 
 void EwiSynth::handlePressure(const uint8_t pressure) {
-  currPulseWidth = (float)pressure / 256.f + .5f; // limit pulse width to .5 - 1.
-  updateOscillators();
+  currPressure = curve.apply((float)pressure / 128.f);
+  currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
 }
 
 void EwiSynth::handlePitchbend(const uint16_t pitchbend) {
-  currBendFactor = pow(2., ((float)pitchbend - 8192.f) / 49152.f); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
-  updateOscillators();
+  polyfotz.setPitchbend(pitchbend); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
+}
+
+void EwiSynth::updateControls() {
+  curve.setX(*control_ptr[CONTROL_CURVEX]);
+  curve.setY(*control_ptr[CONTROL_CURVEY]);
+  polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
+  polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
+  polyfotz.setTune(*control_ptr[CONTROL_TUNE]);
 }
 
 void EwiSynth::handleController(const uint8_t controller, const uint8_t value) {
