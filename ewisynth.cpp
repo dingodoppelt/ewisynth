@@ -11,8 +11,9 @@
 #include <lv2/midi/midi.h>
 #include <lv2/urid/urid.h>
 #include <math.h>
+#include <sys/types.h>
 
-#define MAX_POLYPHONY 4
+#define MAX_POLYPHONY 16
 
 enum ControlPorts {
   CONTROL_TUNE = 0,
@@ -44,15 +45,16 @@ private:
   LV2_URID_Map *map;
   Urids urids;
   double rate;
-  float currFrequency;
-  float currBendFactor;
-  float currPulseWidth;
+  float currFrequency = 440.f;
+  float currBendFactor = 1.f;
+  float currPulseWidth = .5f;
   VariableShapeOscillator SAWosc[MAX_POLYPHONY];
   VariableShapeOscillator SQRosc[MAX_POLYPHONY];
   float aft_amt[MAX_POLYPHONY];
   void handleNoteOn(uint8_t note);
   void handlePressure(const uint8_t pressure);
-  void handlePitchbend(const int16_t pitchbend);
+  void handlePitchbend(const uint16_t pitchbend);
+  float bendrange = 2.f;
   void handleController(const uint8_t controller, const uint8_t value);
   void updateOscillators();
   struct StereoPair {
@@ -113,10 +115,10 @@ void EwiSynth::run(const uint32_t sample_count) {
   // /* check if all ports connected */
   // if ((!l_audio_out_ptr) || (!r_audio_out_ptr) || (!midi_in_ptr)) return;
 
-  for (int i = 0; i < CONTROL_NR; ++i) {
-    if (!control_ptr[i])
-      return;
-  }
+  // for (int i = 0; i < CONTROL_NR; ++i) {
+  //   if (!control_ptr[i])
+  //     return;
+  // }
 
   /* analyze incomming MIDI data */
   LV2_ATOM_SEQUENCE_FOREACH(midi_in_ptr, ev) {
@@ -138,11 +140,10 @@ void EwiSynth::run(const uint32_t sample_count) {
         break;
 
       case LV2_MIDI_MSG_BENDER:
-        handlePitchbend((msg[1] << 8) | msg[2]);
+        handlePitchbend((msg[2] << 7) | msg[1]);
         break;
 
       default:
-          updateOscillators();
         break;
       }
     }
@@ -166,28 +167,26 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
 }
 
 void EwiSynth::updateOscillators() {
-  float freq = currFrequency * currBendFactor * (powf(2, *control_ptr[CONTROL_TUNE] / 40.f));
   for (int i = 0; i < MAX_POLYPHONY; i++) {
-    SAWosc[i].SetFreq(freq);
-    SQRosc[i].SetFreq(freq);
+    SAWosc[i].SetFreq(currFrequency  * currBendFactor * (powf(2.f, *control_ptr[CONTROL_TUNE])));
+    SQRosc[i].SetFreq(currFrequency  * currBendFactor * (powf(2.f, *control_ptr[CONTROL_TUNE])));
     SAWosc[i].SetPW(currPulseWidth);
     SQRosc[i].SetPW(currPulseWidth);
   }
 }
 
 void EwiSynth::handleNoteOn(const uint8_t note) {
-  currFrequency =
-      powf(2.f, ((float)note - 69.f + *control_ptr[CONTROL_TRANSPOSE] + (*control_ptr[CONTROL_OCTAVE] * 12.f)) / 12.f) * 440.f;
+  currFrequency = (powf(2.f, ((float)note - 69.f + *control_ptr[CONTROL_TRANSPOSE] + (*control_ptr[CONTROL_OCTAVE] * 12.f)) / 12.f) * 440.f);
   updateOscillators();
 }
 
 void EwiSynth::handlePressure(const uint8_t pressure) {
-  currPulseWidth = (float)pressure / 256.f + .5f;
+  currPulseWidth = (float)pressure / 256.f + .5f; // limit pulse width to .5 - 1.
   updateOscillators();
 }
 
-void EwiSynth::handlePitchbend(const int16_t pitchbend) {
-  currBendFactor = powf(2, (float)pitchbend / 49152.f);
+void EwiSynth::handlePitchbend(const uint16_t pitchbend) {
+  currBendFactor = pow(2., ( (((float)pitchbend - 8192.f) / 8192.f) * 2.f ) / 12.f); // 2^( (pitchbend * bendrange = 2 / max_pitchbend = 16383) / 12 )
   updateOscillators();
 }
 
