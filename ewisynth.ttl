@@ -47,8 +47,8 @@
             lv2:symbol "tune" ;
             lv2:name "Tune" ;
             lv2:default 0.0 ;
-            lv2:minimum -0.2 ;
-            lv2:maximum 0.2 ;
+            lv2:minimum -0.1 ;
+            lv2:maximum 0.1 ;
             units:unit   units:pc ;
         ] ,
 
@@ -61,6 +61,7 @@
             lv2:minimum -3 ;
             lv2:maximum 3 ;
             lv2:portProperty lv2:oct ;
+            lv2:portProperty lv2:integer ;
         ] ,
 
         [
@@ -131,10 +132,53 @@
             a lv2:InputPort , lv2:ControlPort ;
             lv2:index 11 ;
             lv2:symbol "polyphony" ;
-            lv2:name "Curve" ;
+            lv2:name "Polyphony" ;
             lv2:default 4 ;
             lv2:minimum 1 ;
             lv2:maximum 16 ;
-            units:unit   units: ;
+            lv2:portProperty lv2:integer ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 12 ;
+            lv2:symbol "detune" ;
+            lv2:name "Detune" ;
+            lv2:default 0.0 ;
+            lv2:minimum 0.0 ;
+            lv2:maximum 1.0 ;
+            units:unit units:coef ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 13 ;
+            lv2:symbol "bank" ;
+            lv2:name "Bank" ;
+            lv2:default 1 ;
+            lv2:minimum 1 ;
+            lv2:maximum 16 ;
+            lv2:portProperty lv2:integer ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 14 ;
+            lv2:symbol "voicing" ;
+            lv2:name "Voicing" ;
+            lv2:default 1 ;
+            lv2:minimum 1 ;
+            lv2:maximum 16 ;
+            lv2:portProperty lv2:integer ;
+        ] ,
+
+        [
+            a lv2:InputPort , lv2:ControlPort ;
+            lv2:index 15 ;
+            lv2:symbol "rotator" ;
+            lv2:name "Rotator" ;
+            lv2:default 0 ;
+            lv2:minimum 0 ;
+            lv2:maximum 1 ;
             lv2:portProperty lv2:integer ;
         ] .

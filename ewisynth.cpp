@@ -26,7 +26,12 @@ enum ControlPorts {
   CONTROL_CURVEX = 5,
   CONTROL_CURVEY = 6,
   CONTROL_CURVE = 7,
-  CONTROL_NR = 8
+  CONTROL_POLYPHONY = 8,
+  CONTROL_DETUNE = 9,
+  CONTROL_BANK = 10,
+  CONTROL_VOICING = 11,
+  CONTROL_ROTATOR = 12,
+  CONTROL_NR = 13
 };
 
 enum PortGroups {
@@ -170,7 +175,7 @@ void EwiSynth::run(const uint32_t sample_count) {
 
 EwiSynth::StereoPair EwiSynth::sumOscillators() {
   StereoPair out;
-  int poly_ = polyfotz.getPolyphony();
+  int poly_ = *control_ptr[CONTROL_POLYPHONY];
   for (int i = 0; i < poly_; i++) {
     out.sqr_l +=
         SQRosc[i].Process() / poly_ * *control_ptr[CONTROL_GAIN] * currPressure;
@@ -182,10 +187,23 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
   return out;
 }
 
+void EwiSynth::updateControls() {
+  curve.setX(*control_ptr[CONTROL_CURVEX]);
+  curve.setY(*control_ptr[CONTROL_CURVEY]);
+  polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
+  polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
+  polyfotz.setTune(*control_ptr[CONTROL_TUNE]);
+  polyfotz.setBank(*control_ptr[CONTROL_BANK]);
+  polyfotz.setVoicing(*control_ptr[CONTROL_VOICING]);
+  polyfotz.setRotator(*control_ptr[CONTROL_ROTATOR]);
+  polyfotz.setPolyphony(*control_ptr[CONTROL_POLYPHONY]);
+  polyfotz.setDetune(*control_ptr[CONTROL_DETUNE]);
+}
+
 void EwiSynth::updateOscillators() {
-  for (int i = 0; i < polyfotz.getPolyphony(); i++) {
-    SAWosc[i].SetFreq(polyfotz.getEffectiveFrequency());
-    SQRosc[i].SetFreq(polyfotz.getEffectiveFrequency());
+  for (int i = 0; i < *control_ptr[CONTROL_POLYPHONY]; i++) {
+    SAWosc[i].SetFreq(polyfotz.getFrequency(i));
+    SQRosc[i].SetFreq(polyfotz.getFrequency(i));
     SAWosc[i].SetPW(currPulseWidth);
     SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
   }
@@ -202,14 +220,6 @@ void EwiSynth::handlePressure(const uint8_t pressure) {
 
 void EwiSynth::handlePitchbend(const uint16_t pitchbend) {
   polyfotz.setPitchbend(pitchbend); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
-}
-
-void EwiSynth::updateControls() {
-  curve.setX(*control_ptr[CONTROL_CURVEX]);
-  curve.setY(*control_ptr[CONTROL_CURVEY]);
-  polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
-  polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
-  polyfotz.setTune(*control_ptr[CONTROL_TUNE]);
 }
 
 void EwiSynth::handleController(const uint8_t controller, const uint8_t value) {
