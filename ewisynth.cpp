@@ -23,15 +23,14 @@ enum ControlPorts {
   CONTROL_TRANSPOSE = 2,
   CONTROL_GAIN = 3,
   CONTROL_LEVEL = 4,
-  CONTROL_CURVEX = 5,
-  CONTROL_CURVEY = 6,
-  CONTROL_CURVE = 7,
-  CONTROL_POLYPHONY = 8,
-  CONTROL_DETUNE = 9,
-  CONTROL_BANK = 10,
-  CONTROL_VOICING = 11,
-  CONTROL_ROTATOR = 12,
-  CONTROL_NR = 13
+  CONTROL_CURVEY = 5,
+  CONTROL_CURVE = 6,
+  CONTROL_POLYPHONY = 7,
+  CONTROL_DETUNE = 8,
+  CONTROL_BANK = 9,
+  CONTROL_VOICING = 10,
+  CONTROL_ROTATOR = 11,
+  CONTROL_NR = 12
 };
 
 enum PortGroups {
@@ -188,7 +187,6 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
 }
 
 void EwiSynth::updateControls() {
-  curve.setX(*control_ptr[CONTROL_CURVEX]);
   curve.setY(*control_ptr[CONTROL_CURVEY]);
   polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
   polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
