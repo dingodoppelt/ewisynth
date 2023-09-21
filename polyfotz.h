@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <math.h>
 #include <cstdint>
+#include <vector>
 class PolyFotz {
 private:
     float pitchbend = 1.f; // -1 - 1
@@ -19,20 +20,7 @@ private:
         uint8_t getEffectiveNote() { return note + semitones + octaves + voicingOffset; }
         float   noteToFreq() { return powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f ;}
     };
-    // template<typename T, size_t N >
-    // struct Voicing {
-    //     std::array<T, N> voices;
-    //     uint8_t length = N;
-    //     float toFactor(uint8_t v) { return pow(2., voices[v % N] / 12.); }
-    //     Voicing(const std::array<T, N>& _voices) : voices(_voices) {}
-    // };
-    struct Voicing {
-        int8_t voices[4] = { 0, -5, -10, -12};
-        uint8_t length = 4;
-        float toFactor(uint8_t v, float coef) { return pow(2., coef * voices[v % length] / 12.); }
-    };
     MasterNote masterNote;
-    Voicing voicing;
     uint8_t activeBank = 0;
     uint8_t activeVoicing = 0;
     bool rotator = 0;
@@ -49,18 +37,62 @@ public:
     void setOctave(uint8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
     void setTune(float t) { tune = pow(2.0, t); }
-    void setBank(uint8_t b) { if (activeBank != b) activeBank = b; }
-    void setVoicing(uint8_t v) { if (activeVoicing != v) activeVoicing = v; }
+    void setBank(uint8_t b) { if (activeBank != b) activeBank = b % banks[activeBank].size(); }
+    void setVoicing(uint8_t v) { if (activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
     void setRotator(uint8_t r) { if (rotator != r) rotator = r; }
     void setDetune(float d) { if (detune != d) detune = d; updateDetune(); }
     void setPolyphony(int8_t p) { if (polyphony != p) polyphony = p; updateDetune(); }
     float getFrequency(uint8_t voice) {
         float modulation = 1.f;
-        if (pitchbend < 1.f && voice < voicing.length) {
-            modulation = voicing.toFactor(voice, -normalizedPitchbend ) ;
+        if (pitchbend < 1.f) {
+            modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
         } else {
             modulation = detuneTable[voice] * pitchbend;
         }
         return getMasterFrequency() * modulation; }
     void Init(uint8_t maxPoly) { maxPolyphony = maxPoly; updateDetune(); }
+private:
+    std::vector<std::vector<std::vector<int8_t>>> banks = {
+        {{0, -7, -8, -14, -38}, // nb wide
+        {0, -7, -8, -17, -39},
+        {0, -7, -11, -18, -40},
+        {0, -7, -9, -14, -38},
+        {0, -7, -9, -17, -39},
+        {0, -7, -10, -17, -39}},
+
+        {{0, -7, -11, -18}, // blake
+        {0, -7, -8, -15},
+        {0, -5, -16, -23},
+        {0, -5, -12, -20},
+        {0, -7, -16, -23},
+        {0, -7, -10, -29},
+        {0, -7, -11, -18},
+        {0, -5, -12, -20}},
+
+        {{0, -7, -8, -14}, // nb
+        {0, -7, -8, -17},
+        {0, -7, -11, -18},
+        {0, -7, -9, -14},
+        {0, -7, -9, -17},
+        {0, -7, -10, -17}},
+
+        {{0, 7, -10}, // brecker
+        {0, 7, -7},
+        {0, 7, -8},
+        {0, 7, -2}},
+
+        {{0, -5, -7, -8, -15}, // ferrante
+        {0, -5, -7, -9, -16}},
+
+        {{0, -5, -10, -12}, // generic
+		{0, -5, -10, -20},
+		{0, -3, -8, -19},
+		{0, -3, -7, -10},
+		{0, -4, -9, -11},
+		{0, -3, -8, -11},
+		{0, -5, -7, -11},
+		{0, -5, -11, -15},
+		{0, -3, -6, -9},
+		{0, -4, -8, -12},}
+    };
 };
