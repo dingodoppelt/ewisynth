@@ -103,6 +103,11 @@ public:
         waveshape_ = waveshape;
     }
 
+    void OffsetPhase(float offset)
+    {
+        slave_phase_ += offset;
+    }
+
 private:
     float sample_rate_;
 
