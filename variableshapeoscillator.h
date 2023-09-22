@@ -1,4 +1,3 @@
-{
 /**         
        @brief Variable Waveshape Oscillator. 
        @author Ben Sergentanis
