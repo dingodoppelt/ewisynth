@@ -60,7 +60,7 @@ private:
   float currFrequency = 440.f;
   float currBendFactor = 1.f;
   float currPulseWidth = .5f;
-  float currPressure = .5f;
+  float currPressure = .0f;
   float currShape = 1.f;
   float lastPhase = 0.f;
   VariableShapeOscillator SAWosc[MAX_POLYPHONY];
