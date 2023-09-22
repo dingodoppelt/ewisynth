@@ -20,27 +20,25 @@ private:
         uint8_t getEffectiveNote() { return note + semitones + octaves + voicingOffset; }
         float   noteToFreq() { return powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f; }
     } masterNote;
-    struct Rotator {
-        enum Modes {
-            OFF = 0,
-            LIN = 1,
-            RND = 2
-        };
-        int8_t mode = 0;
-        uint8_t activeVoicing = 0;
-        void updateRotator() {
-            switch (mode) {
-                case OFF:
-                    break;
-                case LIN:
-                    activeVoicing = ++activeVoicing % 16;
-                    break;
-                case RND:
-                    activeVoicing = rand() % 16;
-                    break;
-            }
+    enum Modes {
+        OFF = 0,
+        LIN = 1,
+        RND = 2
+    };
+    int8_t mode = 0;
+    uint8_t activeVoicing = 0;
+    void updateRotator() {
+        switch (mode) {
+            case OFF:
+                break;
+            case LIN:
+                setVoicing(activeVoicing + 1);
+                break;
+            case RND:
+                setVoicing(rand());
+                break;
         }
-    } rotator;
+    }
     uint8_t activeBank = 0;
     float detuneTable[16] = {1};
     float getMasterFrequency() { return masterNote.noteToFreq() * tune; }
@@ -56,14 +54,14 @@ public:
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
     void setTune(float t) { tune = pow(2.0, t); }
     void setBank(uint8_t b) { if (activeBank != b) activeBank = b % banks[activeBank].size(); }
-    void setVoicing(uint8_t v) { if (rotator.activeVoicing != v) rotator.activeVoicing = v % banks[activeBank].size(); }
-    void setRotator(uint8_t r) { if (rotator.mode != r) rotator.mode = r; }
+    void setVoicing(uint8_t v) { if (activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
+    void setRotator(uint8_t r) { if (mode != r) mode = r; }
     void setDetune(float d) { if (detune != d) detune = d; updateDetune(); }
     void setPolyphony(int8_t p) { if (polyphony != p) polyphony = p; updateDetune(); }
     float getFrequency(uint8_t voice) {
         float modulation = 1.f;
         if (pitchbend < 1.f) {
-            modulation = pow(2., -normalizedPitchbend * banks[activeBank][rotator.activeVoicing][voice % banks[activeBank][rotator.activeVoicing].size()] / 12.);
+            modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
         } else {
             modulation = detuneTable[voice] * pitchbend;
         }
