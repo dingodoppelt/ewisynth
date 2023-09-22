@@ -81,7 +81,7 @@
             lv2:index 6 ;
             lv2:symbol "gain" ;
             lv2:name "Gain" ;
-            lv2:default 1.0 ;
+            lv2:default 7.0 ;
             lv2:minimum 0.0 ;
             lv2:maximum 8.0 ;
         ] ,
@@ -91,7 +91,7 @@
             lv2:index 7 ;
             lv2:symbol "level" ;
             lv2:name "Level" ;
-            lv2:default 0.7 ;
+            lv2:default 0.9 ;
             lv2:minimum 0.0 ;
             lv2:maximum 1.0 ;
         ] ,
@@ -145,9 +145,9 @@
             lv2:index 12 ;
             lv2:symbol "bank" ;
             lv2:name "Bank" ;
-            lv2:default 1 ;
-            lv2:minimum 1 ;
-            lv2:maximum 16 ;
+            lv2:default 5 ;
+            lv2:minimum 0 ;
+            lv2:maximum 5 ;
             lv2:portProperty lv2:integer ;
         ] ,
 
@@ -156,9 +156,9 @@
             lv2:index 13 ;
             lv2:symbol "voicing" ;
             lv2:name "Voicing" ;
-            lv2:default 1 ;
-            lv2:minimum 1 ;
-            lv2:maximum 16 ;
+            lv2:default 0 ;
+            lv2:minimum 0 ;
+            lv2:maximum 15 ;
             lv2:portProperty lv2:integer ;
         ] ,
 

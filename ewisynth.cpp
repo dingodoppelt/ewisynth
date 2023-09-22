@@ -209,6 +209,7 @@ void EwiSynth::updateOscillators() {
 
 void EwiSynth::handleNoteOn(const uint8_t note) {
   polyfotz.setNote(note);
+  polyfotz.updateRotator();
 }
 
 void EwiSynth::handlePressure(const uint8_t pressure) {
