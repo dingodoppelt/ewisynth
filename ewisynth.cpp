@@ -217,7 +217,7 @@ void EwiSynth::updateOscillators() {
     if (currShape == 1.f) {
       SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
       SQRosc[i].SetPW(.5f);
-    } else if (currShape == 0.f) {
+    } else {
       SQRosc[i].SetWaveshape(currShape);
       SQRosc[i].SetPW(currPulseWidth);
     }

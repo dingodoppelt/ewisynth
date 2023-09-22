@@ -44,7 +44,11 @@ public:
     float getFrequency(uint8_t voice) {
         float modulation = 1.f;
         if (pitchbend < 1.f) {
-            modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
+            if (voice < banks[activeBank][activeVoicing].size()) {
+                modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
+            } else {
+                modulation = detuneTable[voice];
+            }
         } else {
             modulation = detuneTable[voice] * pitchbend;
         }
