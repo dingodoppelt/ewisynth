@@ -131,13 +131,13 @@ void EwiSynth::connectPort(const uint32_t port, void *data_location) {
 }
 
 void EwiSynth::run(const uint32_t sample_count) {
-  // /* check if all ports connected */
-  // if ((!l_audio_out_ptr) || (!r_audio_out_ptr) || (!midi_in_ptr)) return;
-
-  // for (int i = 0; i < CONTROL_NR; ++i) {
-  //   if (!control_ptr[i])
-  //     return;
-  // }
+//   /* check if all ports connected */
+//   if ((!midi_in_ptr)) return;
+// 
+//   for (int i = 0; i < CONTROL_NR; ++i) {
+//     if (!control_ptr[i])
+//       return;
+//   }
 
   /* analyze incomming MIDI data */
   LV2_ATOM_SEQUENCE_FOREACH(midi_in_ptr, ev) {
