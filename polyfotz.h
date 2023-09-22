@@ -7,7 +7,7 @@ class PolyFotz {
 private:
     float pitchbend = 1.f; // -1 - 1
     float normalizedPitchbend = 0.f;
-    float tune = 1.f;    // -0.2 - 0.2
+    float tune = 1.f;    // -0.05 - 0.05
     float detune = 0.f;
     float phase = 0;
     uint8_t maxPolyphony = 16;
@@ -18,7 +18,7 @@ private:
         uint8_t octaves = 0;
         uint8_t voicingOffset = 0;
         uint8_t getEffectiveNote() { return note + semitones + octaves + voicingOffset; }
-        float   noteToFreq() { return powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f ;}
+        float   noteToFreq() { return powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f; }
     };
     MasterNote masterNote;
     uint8_t activeBank = 0;
@@ -85,14 +85,14 @@ private:
         {0, -5, -7, -9, -16}},
 
         {{0, -5, -10, -12}, // generic
-		{0, -5, -10, -20},
-		{0, -3, -8, -19},
-		{0, -3, -7, -10},
-		{0, -4, -9, -11},
-		{0, -3, -8, -11},
-		{0, -5, -7, -11},
-		{0, -5, -11, -15},
-		{0, -3, -6, -9},
-		{0, -4, -8, -12},}
+        {0, -5, -10, -20},
+        {0, -3, -8, -19},
+        {0, -3, -7, -10},
+        {0, -4, -9, -11},
+        {0, -3, -8, -11},
+        {0, -5, -7, -11},
+        {0, -5, -11, -15},
+        {0, -3, -6, -9},
+        {0, -4, -8, -12},}
     };
 };
