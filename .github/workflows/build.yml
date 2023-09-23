@@ -6,6 +6,9 @@ on:
       - "build_*"
       - "r_*"
 
+env:
+  CACHE_VERSION: 1
+
 jobs:
   build:
     runs-on: ubuntu-latest
