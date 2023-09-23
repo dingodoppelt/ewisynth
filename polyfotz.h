@@ -31,8 +31,8 @@ private:
     }
 public:
     void setNote (uint8_t n) { masterNote.note = (0 <= n && n < 128) ? n : 69; }
-    void setTranspose(uint8_t t) { masterNote.semitones = t; }
-    void setOctave(uint8_t o) { masterNote.octaves = o * 12; }
+    void setTranspose(int8_t t) { masterNote.semitones = t; }
+    void setOctave(int8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
     void setTune(float t) { tune = pow(2.0, t); }
     void setBank(uint8_t b) { if (activeBank != b) activeBank = b % banks[activeBank].size(); }
