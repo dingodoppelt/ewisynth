@@ -14,10 +14,9 @@ private:
     uint8_t polyphony = 4;
     struct MasterNote {
         uint8_t note = 69;
-        uint8_t semitones = 0;
-        uint8_t octaves = 0;
-        uint8_t voicingOffset = 0;
-        uint8_t getEffectiveNote() { return note + semitones + octaves + voicingOffset; }
+        int8_t semitones = 0;
+        int8_t octaves = 0;
+        uint8_t getEffectiveNote() { return note + semitones + octaves; }
         float   noteToFreq() { return powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f; }
     } masterNote;
     uint8_t mode = 0;
