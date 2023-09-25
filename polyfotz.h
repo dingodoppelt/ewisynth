@@ -35,7 +35,7 @@ public:
     void setOctave(int8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
     void setTune(float t) { tune = pow(2.0, t); }
-    void setBank(uint8_t b) { if (activeBank != b) activeBank = b % banks[activeBank].size(); }
+    void setBank(uint8_t b) { if (activeBank != b) activeBank = b % banks[b].size(); }
     void setVoicing(uint8_t v) { if (mode == 0 && activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
     void setRotator(uint8_t r) { if (mode != r) mode = r; }
     void setDetune(float d) { if (detune != d) detune = d; updateDetune(); }
