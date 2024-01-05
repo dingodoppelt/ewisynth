@@ -1,8 +1,8 @@
 BUNDLE = ewisynth.lv2
 PREFIX ?= /usr
 INSTALL_DIR ?= $(DESTDIR)$(PREFIX)/lib/lv2
-CXXFLAGS ?=
-CXX ?= gcc
+CXXFLAGS ?= -O3 -march=native -flto
+CXX ?= g++
 
 $(BUNDLE): manifest.ttl ewisynth.ttl ewisynth.so
 	rm -rf $(BUNDLE)
