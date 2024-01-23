@@ -133,14 +133,22 @@ void EwiSynth::connectPort(const uint32_t port, void *data_location) {
 void EwiSynth::run(const uint32_t sample_count) {
 //   /* check if all ports connected */
 //   if ((!midi_in_ptr)) return;
-// 
+//
 //   for (int i = 0; i < CONTROL_NR; ++i) {
 //     if (!control_ptr[i])
 //       return;
 //   }
+  updateControls();
+
+  uint32_t  offset = 0;
 
   /* analyze incomming MIDI data */
   LV2_ATOM_SEQUENCE_FOREACH(midi_in_ptr, ev) {
+    for (int i = offset; i < ev->time.frames; i++) {
+      const StereoPair outputs = sumOscillators();
+      l_audio_out_ptr[i] = outputs.sqr_l;
+      r_audio_out_ptr[i] = outputs.saw_r;
+    }
     if (ev->body.type == urids.midi_MidiEvent) {
       const uint8_t *const msg = (const uint8_t *)(ev + 1);
       const uint8_t typ = lv2_midi_message_type(msg);
@@ -166,10 +174,10 @@ void EwiSynth::run(const uint32_t sample_count) {
         break;
       }
     }
+    offset = (uint32_t)ev->time.frames;
   }
-  updateControls();
   updateOscillators();
-  for (int i = 0; i < sample_count; i++) {
+  for (int i = offset; i < sample_count; i++) {
     const StereoPair outputs = sumOscillators();
     l_audio_out_ptr[i] = outputs.sqr_l;
     r_audio_out_ptr[i] = outputs.saw_r;
