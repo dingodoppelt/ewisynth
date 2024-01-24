@@ -156,18 +156,22 @@ void EwiSynth::run(const uint32_t sample_count) {
       switch (typ) {
       case LV2_MIDI_MSG_NOTE_ON:
         handleNoteOn(msg[1]);
+        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_CHANNEL_PRESSURE:
         handlePressure(msg[1]);
+        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_CONTROLLER:
         handleController(msg[1], msg[2]);
+        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_BENDER:
         handlePitchbend((msg[2] << 7) | msg[1]);
+        updateOscillators();
         break;
 
       default:
@@ -176,7 +180,6 @@ void EwiSynth::run(const uint32_t sample_count) {
     }
     offset = (uint32_t)ev->time.frames;
   }
-  updateOscillators();
   for (int i = offset; i < sample_count; i++) {
     const StereoPair outputs = sumOscillators();
     l_audio_out_ptr[i] = outputs.sqr_l;
