@@ -69,7 +69,6 @@ private:
   void handlePressure(const uint8_t pressure);
   void handlePitchbend(const uint16_t pitchbend);
   void handleController(const uint8_t controller, const uint8_t value);
-  void updateOscillators();
   void updateControls();
   PolyFotz polyfotz;
   Curves curve;
@@ -156,22 +155,18 @@ void EwiSynth::run(const uint32_t sample_count) {
       switch (typ) {
       case LV2_MIDI_MSG_NOTE_ON:
         handleNoteOn(msg[1]);
-        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_CHANNEL_PRESSURE:
         handlePressure(msg[1]);
-        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_CONTROLLER:
         handleController(msg[1], msg[2]);
-        updateOscillators();
         break;
 
       case LV2_MIDI_MSG_BENDER:
         handlePitchbend((msg[2] << 7) | msg[1]);
-        updateOscillators();
         break;
 
       default:
@@ -190,7 +185,25 @@ void EwiSynth::run(const uint32_t sample_count) {
 EwiSynth::StereoPair EwiSynth::sumOscillators() {
   StereoPair out;
   int poly_ = *control_ptr[CONTROL_POLYPHONY];
+  float delta = 0.f;
+
+  if (*control_ptr[CONTROL_PHASE] != lastPhase) {
+    delta = lastPhase - *control_ptr[CONTROL_PHASE];
+    lastPhase = *control_ptr[CONTROL_PHASE];
+  };
+
   for (int i = 0; i < poly_; i++) {
+    SAWosc[i].SetFreq(polyfotz.getFrequency(i));
+    SQRosc[i].SetFreq(polyfotz.getFrequency(i));
+    SAWosc[i].SetPW(currPulseWidth);
+    if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
+    if (currShape == 1.f) {
+      SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
+      SQRosc[i].SetPW(.5f);
+    } else {
+      SQRosc[i].SetWaveshape(currShape);
+      SQRosc[i].SetPW(currPulseWidth);
+    }
     out.sqr_l +=
         SQRosc[i].Process() / poly_ * *control_ptr[CONTROL_GAIN] * currPressure;
     out.saw_r +=
@@ -212,27 +225,6 @@ void EwiSynth::updateControls() {
   polyfotz.setPolyphony(*control_ptr[CONTROL_POLYPHONY]);
   polyfotz.setDetune(*control_ptr[CONTROL_DETUNE]);
   if (*control_ptr[CONTROL_SHAPE] != currShape) currShape = *control_ptr[CONTROL_SHAPE];
-}
-
-void EwiSynth::updateOscillators() {
-  float delta = 0.f;
-  if (*control_ptr[CONTROL_PHASE] != lastPhase) {
-    delta = lastPhase - *control_ptr[CONTROL_PHASE];
-    lastPhase = *control_ptr[CONTROL_PHASE];
-  };
-  for (int i = 0; i < *control_ptr[CONTROL_POLYPHONY]; i++) {
-    SAWosc[i].SetFreq(polyfotz.getFrequency(i));
-    SQRosc[i].SetFreq(polyfotz.getFrequency(i));
-    SAWosc[i].SetPW(currPulseWidth);
-    if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
-    if (currShape == 1.f) {
-      SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
-      SQRosc[i].SetPW(.5f);
-    } else {
-      SQRosc[i].SetWaveshape(currShape);
-      SQRosc[i].SetPW(currPulseWidth);
-    }
-  }
 }
 
 void EwiSynth::handleNoteOn(const uint8_t note) {
