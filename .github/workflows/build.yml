@@ -20,7 +20,7 @@ jobs:
     - name: dependencies
       run: sudo apt install build-essential lv2-dev
     - name: make
-      run: make && tar czf ewisynth-lv2.tar.gz ewisynth.lv2/
+      run: make CXXFLAGS='' && tar czf ewisynth-lv2.tar.gz ewisynth.lv2/
     - name: Upload lv2 Build Artifact
       uses: actions/upload-artifact@v3.1.3
       with:
