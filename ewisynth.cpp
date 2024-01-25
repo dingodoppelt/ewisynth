@@ -23,7 +23,7 @@ enum ControlPorts {
   CONTROL_TRANSPOSE = 2,
   CONTROL_GAIN = 3,
   CONTROL_LEVEL = 4,
-  CONTROL_CURVEY = 5,
+  CONTROL_SLEWTIME = 5,
   CONTROL_CURVE = 6,
   CONTROL_POLYPHONY = 7,
   CONTROL_DETUNE = 8,
@@ -58,6 +58,13 @@ private:
   Urids urids;
   double rate;
   float currFrequency = 440.f;
+  float targetFrequency = 440.f;
+  float realFrequency = 440.f;
+  float freqRatio() { return currFrequency / targetFrequency; }
+  float slewSteps = 0.f;
+  float slewStepsRemaining = 0.f;
+  float exponent() { return (slewSteps > 0) ? slewStepsRemaining / slewSteps : 1.f; }
+  float pitchFactor() { return powf(freqRatio(), exponent()); }
   float currBendFactor = 1.f;
   float currPulseWidth = .5f;
   float currPressure = .0f;
@@ -192,9 +199,11 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
     lastPhase = *control_ptr[CONTROL_PHASE];
   };
 
+  realFrequency = polyfotz.getFrequency(0) * pitchFactor();
   for (int i = 0; i < poly_; i++) {
-    SAWosc[i].SetFreq(polyfotz.getFrequency(i));
-    SQRosc[i].SetFreq(polyfotz.getFrequency(i));
+    float freq = polyfotz.getFrequency(i) * pitchFactor();
+    SAWosc[i].SetFreq(freq);
+    SQRosc[i].SetFreq(freq);
     SAWosc[i].SetPW(currPulseWidth);
     if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
     if (currShape == 1.f) {
@@ -211,11 +220,12 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
   }
   out.sqr_l = waveshaper(out.sqr_l) * *control_ptr[CONTROL_LEVEL];
   out.saw_r = waveshaper(out.saw_r) * *control_ptr[CONTROL_LEVEL];
+  (slewStepsRemaining > 0) ? slewStepsRemaining-- : currFrequency = targetFrequency;
   return out;
 }
 
 void EwiSynth::updateControls() {
-  curve.setY(*control_ptr[CONTROL_CURVEY]);
+  slewSteps = *control_ptr[CONTROL_SLEWTIME];
   polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
   polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
   polyfotz.setTune(*control_ptr[CONTROL_TUNE]);
@@ -228,7 +238,10 @@ void EwiSynth::updateControls() {
 }
 
 void EwiSynth::handleNoteOn(const uint8_t note) {
+  currFrequency = realFrequency;
   polyfotz.setNote(note);
+  targetFrequency = polyfotz.getFrequency(0);
+  slewStepsRemaining = slewSteps;
   polyfotz.updateRotator();
 }
 
