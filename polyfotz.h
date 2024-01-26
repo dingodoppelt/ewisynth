@@ -81,6 +81,8 @@ public:
         }
     }
     void Init(uint8_t maxPoly) { maxPolyphony = maxPoly; updateDetune(); }
+    uint8_t getActiveVoicingSize() { return banks[activeBank][activeVoicing].size(); }
+    bool isPitchbendNegative() { return (pitchbend < 1.f); }
 private:
     const std::vector<std::vector<std::vector<int8_t>>> banks = {
         {{0, -7, -8, -14, -38}, // nb wide

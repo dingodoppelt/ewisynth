@@ -24,15 +24,16 @@ enum ControlPorts {
   CONTROL_GAIN = 3,
   CONTROL_LEVEL = 4,
   CONTROL_SLEWTIME = 5,
-  CONTROL_CURVE = 6,
-  CONTROL_POLYPHONY = 7,
-  CONTROL_DETUNE = 8,
-  CONTROL_BANK = 9,
-  CONTROL_VOICING = 10,
-  CONTROL_ROTATOR = 11,
-  CONTROL_PHASE = 12,
-  CONTROL_SHAPE = 13,
-  CONTROL_NR = 14
+  CONTROL_ARPRANGE = 6,
+  CONTROL_ARPTIME = 7,
+  CONTROL_POLYPHONY = 8,
+  CONTROL_DETUNE = 9,
+  CONTROL_BANK = 10,
+  CONTROL_VOICING = 11,
+  CONTROL_ROTATOR = 12,
+  CONTROL_PHASE = 13,
+  CONTROL_SHAPE = 14,
+  CONTROL_NR = 15
 };
 
 enum PortGroups {
@@ -87,6 +88,42 @@ private:
   float waveshaper(float sample) {
     return 2/(1+exp(-2*sample))-1;
   }
+  struct Arpeggiator {
+    bool isActive = false;
+    uint8_t range = 0;
+    uint8_t index = 1;
+    int8_t octave = 0;
+    int8_t indexIncrement = 1;
+    int arpStepsInSamples = 8000;
+    int arpStepsRemaining = arpStepsInSamples;
+    void advance(int voicingSize) {
+      if (!isActive) return;
+
+      octave = index / voicingSize;
+      if (index >= range) {
+        index = range;
+        indexIncrement = -1;
+      }
+      if (index <= 0) {
+        index = 0;
+        indexIncrement = 1;
+      }
+      if (arpStepsInSamples > 0) {
+        if (arpStepsRemaining > 0) {
+          arpStepsRemaining--;
+        } else {
+          arpStepsRemaining = arpStepsInSamples;
+          index += indexIncrement;
+        }
+      }
+    }
+    int getIndex(int voicingSize) {
+      return index % voicingSize;
+    }
+    int getOctave(int voicingSize) {
+      return index / voicingSize;
+    }
+  } arpeggiator;
 
 public:
   EwiSynth(const double sample_rate, const LV2_Feature *const *features);
@@ -199,9 +236,15 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
     lastPhase = *control_ptr[CONTROL_PHASE];
   };
 
+  int voicingSize = polyfotz.getActiveVoicingSize();
   realFrequency = polyfotz.getFrequency(0) * pitchFactor();
   for (int i = 0; i < poly_; i++) {
-    float freq = polyfotz.getFrequency(i) * pitchFactor();
+    float freq;
+    if (arpeggiator.isActive) {
+      freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
+    } else {
+      freq = polyfotz.getFrequency(i) * pitchFactor();
+    }
     SAWosc[i].SetFreq(freq);
     SQRosc[i].SetFreq(freq);
     SAWosc[i].SetPW(currPulseWidth);
@@ -221,11 +264,21 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
   out.sqr_l = waveshaper(out.sqr_l) * *control_ptr[CONTROL_LEVEL];
   out.saw_r = waveshaper(out.saw_r) * *control_ptr[CONTROL_LEVEL];
   (slewStepsRemaining > 0) ? slewStepsRemaining-- : currFrequency = targetFrequency;
+  arpeggiator.advance(voicingSize);
   return out;
 }
 
 void EwiSynth::updateControls() {
   slewSteps = *control_ptr[CONTROL_SLEWTIME];
+  if (*control_ptr[CONTROL_ARPRANGE] > 0 && *control_ptr[CONTROL_POLYPHONY] == 1 && polyfotz.isPitchbendNegative()) {
+    arpeggiator.range = *control_ptr[CONTROL_ARPRANGE];
+    arpeggiator.arpStepsInSamples = *control_ptr[CONTROL_ARPTIME];
+    arpeggiator.isActive = true;
+  } else {
+    arpeggiator.range = 0;
+    arpeggiator.index = 0;
+    arpeggiator.isActive = false;
+  }
   polyfotz.setTranspose(*control_ptr[CONTROL_TRANSPOSE]);
   polyfotz.setOctave(*control_ptr[CONTROL_OCTAVE]);
   polyfotz.setTune(*control_ptr[CONTROL_TUNE]);
