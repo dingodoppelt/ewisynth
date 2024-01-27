@@ -242,6 +242,23 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
     float freq;
     if (arpeggiator.isActive) {
       freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
+      for (int j = 0; j < voicingSize; j++) {
+        SAWosc[j+1].SetFreq(polyfotz.getFrequency(j));
+        SQRosc[j+1].SetFreq(polyfotz.getFrequency(j));
+        SAWosc[j+1].SetPW(currPulseWidth);
+        if (delta != 0.f) SQRosc[j+1].OffsetPhase(delta);
+        if (currShape == 1.f) {
+          SQRosc[j+1].SetWaveshape( 1.5f - currPulseWidth );
+          SQRosc[j+1].SetPW(.5f);
+        } else {
+          SQRosc[j+1].SetWaveshape(currShape);
+          SQRosc[j+1].SetPW(currPulseWidth);
+        }
+        out.sqr_l +=
+            SQRosc[j+1].Process() / voicingSize * *control_ptr[CONTROL_GAIN] * currPressure;
+        out.saw_r +=
+            SAWosc[j+1].Process() / voicingSize * *control_ptr[CONTROL_GAIN] * currPressure;
+      }
     } else {
       freq = polyfotz.getFrequency(i) * pitchFactor();
     }
@@ -270,7 +287,7 @@ EwiSynth::StereoPair EwiSynth::sumOscillators() {
 
 void EwiSynth::updateControls() {
   slewSteps = *control_ptr[CONTROL_SLEWTIME];
-  if (*control_ptr[CONTROL_ARPRANGE] > 0 && *control_ptr[CONTROL_POLYPHONY] == 1 && polyfotz.isPitchbendNegative()) {
+  if (*control_ptr[CONTROL_POLYPHONY] == 1 && polyfotz.isPitchbendNegative()) {
     arpeggiator.range = *control_ptr[CONTROL_ARPRANGE];
     arpeggiator.arpStepsInSamples = *control_ptr[CONTROL_ARPTIME];
     arpeggiator.isActive = true;
