@@ -92,14 +92,12 @@ private:
     bool isActive = false;
     uint8_t range = 0;
     uint8_t index = 1;
-    int8_t octave = 0;
     int8_t indexIncrement = 1;
     int arpStepsInSamples = 8000;
     int arpStepsRemaining = arpStepsInSamples;
     void advance(int voicingSize) {
       if (!isActive) return;
 
-      octave = index / voicingSize;
       if (index >= range) {
         index = range;
         indexIncrement = -1;
@@ -121,7 +119,9 @@ private:
       return index % voicingSize;
     }
     int getOctave(int voicingSize) {
-      return index / voicingSize;
+      int octave = index / voicingSize;
+      if (range > 0 || arpStepsInSamples > 0) octave -= 1;
+      return octave;
     }
   } arpeggiator;
 
