@@ -18,4 +18,5 @@ install: $(BUNDLE)
 	cp -R $(BUNDLE) $(INSTALL_DIR)
 
 clean:
+	rm ewisynth.so
 	rm -rf $(BUNDLE)
