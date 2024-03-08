@@ -42,7 +42,7 @@ public:
         }
     }
     void setVoicing(uint8_t v) { if (mode == 0 && activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
-    void setRotator(uint8_t r) { if (mode != r) mode = r % 2; }
+    void setRotator(uint8_t r) { if (mode != r) mode = (r > 2 || r < 0) ? 0 : r; }
     void setDetune(float d) {
         if (detune != d) {
             detune = d;
