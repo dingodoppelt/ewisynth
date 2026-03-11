@@ -1,2 +1,16 @@
+*.a
+*.d
+*.o
+
+*.exe
+*.dll
+*.dylib
 *.so
-*.lv2/
+*.zip
+
+.kdev_include_paths
+.kdev4/
+.DS_Store
+
+build/
+bin/
