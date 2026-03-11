@@ -135,26 +135,21 @@ private:
     double          fSampleRate;
     CParamSmooth    *smooth_gain;
 
-    float currFrequency = 440.f;
-    float targetFrequency = 440.f;
-    float realFrequency = 440.f;
+    float currFrequency;
+    float targetFrequency;
+    float realFrequency;
     float freqRatio() { return currFrequency / targetFrequency; }
-    float slewSteps = 0.f;
-    float slewStepsRemaining = 0.f;
+    float slewSteps;
+    float slewStepsRemaining;
     float exponent() { return (slewSteps > 0) ? slewStepsRemaining / slewSteps : 1.f; }
     float pitchFactor() { return powf(freqRatio(), exponent()); }
-    float currBendFactor = 1.f;
-    float currPulseWidth = .5f;
-    float currPressure = .0f;
-    float currShape = 1.f;
-    float lastPhase = 0.f;
+    float currBendFactor;
+    float currPulseWidth;
+    float currPressure;
+    float currShape;
+    float lastPhase;
     VariableShapeOscillator SAWosc[MAX_POLYPHONY];
     VariableShapeOscillator SQRosc[MAX_POLYPHONY];
-    void handleNoteOn(uint8_t note);
-    void handlePressure(const uint8_t pressure);
-    void handlePitchbend(const uint16_t pitchbend);
-    void handleController(const uint8_t controller, const uint8_t value);
-    void updateControls();
     PolyFotz polyfotz;
     struct StereoPair {
         float sqr_l = 0.f;
@@ -212,10 +207,10 @@ struct Preset {
 };
 
 const Preset factoryPresets[] = {
-    {
-        "Unity Gain",
-        {0.0f}
-    }
+    // {
+    //     "Unity Gain",
+    //     {0.0f}
+    // }
     //,{
     //    "Another preset",  // preset name
     //    {-14.0f, ...}      // array of presetCount float param values
