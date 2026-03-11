@@ -7,6 +7,7 @@
  */
 
 #include "PluginEwisynth.hpp"
+#include <cstdint>
 
 START_NAMESPACE_DISTRHO
 
@@ -16,7 +17,6 @@ PluginEwisynth::PluginEwisynth()
     : Plugin(CONTROL_NR, presetCount, 0)  // paramCount param(s), presetCount program(s), 0 states
 {
     const float sample_rate = getSampleRate();
-    smooth_gain = new CParamSmooth(20.0f, sample_rate);
     polyfotz.Init(MAX_POLYPHONY);
 
     for (unsigned p = 0; p < CONTROL_NR; ++p) {
@@ -28,13 +28,12 @@ PluginEwisynth::PluginEwisynth()
         SAWosc[i].Init(sample_rate);
         SQRosc[i].Init(sample_rate);
         SAWosc[i].SetWaveshape(0);
-        SQRosc[i].SetWaveshape(currShape);
+        SQRosc[i].SetWaveshape(0.f);
     }
 
 }
 
 PluginEwisynth::~PluginEwisynth() {
-    delete smooth_gain;
 }
 
 // -----------------------------------------------------------------------
@@ -227,7 +226,6 @@ void PluginEwisynth::initProgramName(uint32_t index, String& programName) {
 */
 void PluginEwisynth::sampleRateChanged(double newSampleRate) {
     fSampleRate = newSampleRate;
-    smooth_gain->setSampleRate(newSampleRate);
 }
 
 /**
@@ -242,6 +240,8 @@ float PluginEwisynth::getParameterValue(uint32_t index) const {
 */
 void PluginEwisynth::setParameterValue(uint32_t index, float value) {
 
+    fParams[index] = value;
+    
     switch (index) {
         case CONTROL_TUNE:
             polyfotz.setTune(value);
@@ -275,7 +275,6 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
             break;
         default:
-            fParams[index] = value;
             break;
     }
 }
@@ -306,8 +305,12 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                          uint32_t frames,
                          const MidiEvent* midiEvents, uint32_t midiEventCount) {
 
+    // get the left and right audio outputs
+    float* const outL = outputs[0];
+    float* const outR = outputs[1];
+
     slewSteps = (uint8_t)getParameterValue(CONTROL_SLEWTIME);
-    arpeggiator.isActive = getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
+    arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
     if (arpeggiator.isActive) {
         arpeggiator.range = (uint8_t)getParameterValue(CONTROL_ARPRANGE);
         arpeggiator.arpStepsInSamples = (uint8_t)getParameterValue(CONTROL_ARPTIME);
@@ -316,32 +319,35 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         arpeggiator.index = 0;
     }
 
-    // get the left and right audio outputs
-    float* const outL = outputs[0];
-    float* const outR = outputs[1];
-
     uint32_t  offset = 0;
 
     for (uint32_t i=0; i<midiEventCount; i++) {
-        for (uint32_t j = offset; j < midiEvents[i].frame; j++) {
-            const StereoPair outputs = sumOscillators();
-            outL[j] = outputs.sqr_l;
-            outR[j] = outputs.saw_r;
-            offset++;
-        }
-        switch (midiEvents[i].data[0] >> 4) {
-            case 0x9:
-                currFrequency = realFrequency;
-                polyfotz.setNote(midiEvents->data[1]);
-                targetFrequency = polyfotz.getFrequency(0);
-                slewStepsRemaining = slewSteps;
-                polyfotz.updateRotator();
-                break;
-            case 0xE:
-                polyfotz.setPitchbend(midiEvents->data[1]); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
-                break;
-            default:
-                break;
+        if (midiEvents[i].size <= 3)
+        {
+            uint8_t status = midiEvents[i].data[0];
+            uint8_t byte1 = midiEvents[i].data[1] & 127;
+            uint8_t byte2 = midiEvents[i].data[2] & 127;
+            
+            for (uint32_t j = 0; j <= midiEvents[i].frame; j++) {
+                const StereoPair outputs = sumOscillators();
+                outL[j + offset] = outputs.sqr_l;
+                outR[j + offset] = outputs.saw_r;
+                offset++;
+            }
+            switch (status & 0xf0) {
+                case 0x90:
+                    currFrequency = realFrequency;
+                    polyfotz.setNote(byte1);
+                    targetFrequency = polyfotz.getFrequency(0);
+                    slewStepsRemaining = slewSteps;
+                    polyfotz.updateRotator();
+                    break;
+                case 0xE0:
+                    polyfotz.setPitchbend(byte1); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
+                    break;
+                default:
+                    break;
+            }
         }
     }
     for (uint32_t j = offset; j < frames; j++) {
@@ -361,7 +367,7 @@ Plugin* createPlugin() {
 
 PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
   StereoPair out;
-  int poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
+  uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
   float delta = 0.f;
   float phase_ = getParameterValue(CONTROL_PHASE);
   float gain_ = getParameterValue(CONTROL_GAIN);

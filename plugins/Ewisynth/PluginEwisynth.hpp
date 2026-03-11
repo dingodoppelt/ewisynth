@@ -133,21 +133,20 @@ protected:
 private:
     float           fParams[CONTROL_NR];
     double          fSampleRate;
-    CParamSmooth    *smooth_gain;
 
-    float currFrequency;
-    float targetFrequency;
-    float realFrequency;
+    float currFrequency = 440.f;
+    float targetFrequency = 440.f;
+    float realFrequency = 440.f;
     float freqRatio() { return currFrequency / targetFrequency; }
-    float slewSteps;
-    float slewStepsRemaining;
+    float slewSteps = 0.f;
+    float slewStepsRemaining = 0.f;
     float exponent() { return (slewSteps > 0) ? slewStepsRemaining / slewSteps : 1.f; }
     float pitchFactor() { return powf(freqRatio(), exponent()); }
-    float currBendFactor;
-    float currPulseWidth;
-    float currPressure;
-    float currShape;
-    float lastPhase;
+    float currBendFactor = 1.f;
+    float currPulseWidth = .5f;
+    float currPressure = 0.f;
+    float currShape = 0.f;
+    float lastPhase = 0.f;
     VariableShapeOscillator SAWosc[MAX_POLYPHONY];
     VariableShapeOscillator SQRosc[MAX_POLYPHONY];
     PolyFotz polyfotz;

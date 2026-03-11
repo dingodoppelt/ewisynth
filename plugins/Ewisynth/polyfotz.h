@@ -11,7 +11,7 @@ private:
     float detune = 0.f;
     float phase = 0;
     uint8_t maxPolyphony = 16;
-    uint8_t polyphony = 4;
+    uint8_t polyphony = 1;
     struct MasterNote {
         uint8_t note = 69;
         int8_t semitones = 0;
@@ -49,7 +49,7 @@ public:
             updateDetune();
         }
     }
-    void setPolyphony(int8_t p) {
+    void setPolyphony(uint8_t p) {
         if (polyphony != p) {
             polyphony = p;
             updateDetune();
