@@ -52,7 +52,6 @@ public:
         inputBufferSize = bufsize;
         recreateAubioPitchDetector(sr);
         
-        lastKnownPitchLinear = 0.0f;
         lastKnownPitchInHz = 0.0f;
         lastKnownPitchConfidence = 0.0f;
         
