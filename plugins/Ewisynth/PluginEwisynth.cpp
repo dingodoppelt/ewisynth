@@ -326,7 +326,6 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         {
             uint8_t status = midiEvents[i].data[0];
             uint8_t byte1 = midiEvents[i].data[1] & 127;
-            uint8_t byte2 = midiEvents[i].data[2] & 127;
             
             for (uint32_t j = 0; j <= midiEvents[i].frame; j++) {
                 const StereoPair outputs = sumOscillators();
@@ -343,7 +342,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                     polyfotz.updateRotator();
                     break;
                 case 0xE0:
-                    polyfotz.setPitchbend(byte1); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
+                    polyfotz.setPitchbend(midiEvents[i].data[2] << 7 | midiEvents[i].data[1]); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
                     break;
                 default:
                     break;
