@@ -12,6 +12,8 @@
 #include "DistrhoPlugin.hpp"
 #include "polyfotz.h"
 #include "variableshapeoscillator.h"
+#include "pitchtracker.h"
+#include <cstdint>
 
 #define MAX_POLYPHONY 16
 
@@ -55,6 +57,8 @@ public:
         CONTROL_SHAPE,
         CONTROL_PRESSURE,
         CONTROL_CURVE,
+        paramUseAudio,
+        paramUsePolyfotz,
         CONTROL_NR
     };
 
@@ -102,6 +106,7 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
+    void initAudioPort(bool input, uint32_t index, AudioPort& port);
     void initParameter(uint32_t index, Parameter& parameter) override;
     void initProgramName(uint32_t index, String& programName) override;
 
@@ -162,9 +167,9 @@ private:
         uint8_t range = 0;
         uint8_t index = 1;
         int8_t indexIncrement = 1;
-        int arpStepsInSamples = 8000;
-        int arpStepsRemaining = arpStepsInSamples;
-        void advance(int voicingSize) {
+        uint32_t arpStepsInSamples = 8000;
+        uint32_t arpStepsRemaining = arpStepsInSamples;
+        void advance() {
             if (!isActive) return;
 
             if (index >= range) {
@@ -194,6 +199,7 @@ private:
         }
     } arpeggiator;
 
+    PitchTracker* pt;
 
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEwisynth)

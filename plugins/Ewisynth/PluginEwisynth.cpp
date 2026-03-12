@@ -9,12 +9,15 @@
 #include "PluginEwisynth.hpp"
 #include <cstdint>
 
+#define AUBIOBUFSIZE 2048
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
 PluginEwisynth::PluginEwisynth()
-    : Plugin(CONTROL_NR, presetCount, 0)  // paramCount param(s), presetCount program(s), 0 states
+    : Plugin(CONTROL_NR, presetCount, 0),  // paramCount param(s), presetCount program(s), 0 states
+      pt(nullptr)
 {
     const float sample_rate = getSampleRate();
     polyfotz.Init(MAX_POLYPHONY);
@@ -31,6 +34,8 @@ PluginEwisynth::PluginEwisynth()
         SQRosc[i].SetWaveshape(0.f);
     }
 
+    pt = new PitchTracker(sample_rate, AUBIOBUFSIZE);
+
 }
 
 PluginEwisynth::~PluginEwisynth() {
@@ -38,6 +43,27 @@ PluginEwisynth::~PluginEwisynth() {
 
 // -----------------------------------------------------------------------
 // Init
+
+void PluginEwisynth::initAudioPort(bool input, uint32_t index, AudioPort& port)
+{
+    if (input) {
+        port.name = "Audio In";
+        port.symbol = "audioIn";
+        return;
+    }
+    
+    switch (index)
+    {
+        case 0:
+            port.name   = "Square Out";
+            port.symbol = "sqrOut";
+            break;
+        case 1:
+            port.name   = "Saw Out";
+            port.symbol = "sawOut";
+            break;
+    }
+}
 
 void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
     if (index >= CONTROL_NR)
@@ -118,7 +144,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.symbol = "arptime";
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
-            parameter.ranges.max = 3500;
+            parameter.ranges.max = 8000;
             parameter.unit = "frames";
             parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
             break;
@@ -205,6 +231,22 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.max = 10.0f;
             parameter.hints = kParameterIsAutomatable;
             break;
+        case paramUseAudio:
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
+            parameter.name = "Use Audio Input";
+            parameter.symbol = "useAudioIn";
+            parameter.ranges.def = 0;
+            parameter.ranges.min = 0;
+            parameter.ranges.max = 1;
+            break;
+        case paramUsePolyfotz:
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
+            parameter.name = "Toggle Harmony";
+            parameter.symbol = "toggleHarmony";
+            parameter.ranges.def = 0;
+            parameter.ranges.min = 0;
+            parameter.ranges.max = 1;
+            break;
     }
 }
 
@@ -252,6 +294,12 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
         case CONTROL_TRANSPOSE:
             polyfotz.setTranspose((uint8_t)value);
             break;
+        case CONTROL_ARPRANGE:
+            arpeggiator.range = (uint32_t)value;
+            break;
+        case CONTROL_ARPTIME:
+            arpeggiator.arpStepsInSamples = (uint32_t)value;
+            break;
         case CONTROL_BANK:
             polyfotz.setBank((uint8_t)value);
             break;
@@ -269,6 +317,25 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             break;
         case CONTROL_POLYPHONY:
             polyfotz.setPolyphony((uint8_t)value);
+            break;
+        case CONTROL_SLEWTIME:
+            slewSteps = (uint8_t)value;
+            break;
+        // case paramSensitivity:      // TODO: setting these doesn't work and crashes
+        //     // pt->setSens(value);
+        //     break;
+        // case paramHoldOutputPitch:
+        //     // pt->setHoldPitch((bool)value);
+        //     break;
+        // case paramConfidenceThreshold:
+        //     // pt->setThreshold(value);
+        //     break;
+        case paramUsePolyfotz:
+            if (value > .5) {
+                polyfotz.setPitchbend(0);
+            } else {
+                polyfotz.setPitchbend(8192);
+            }
             break;
         case CONTROL_PRESSURE:
             currPressure = pow(value / 127.f, getParameterValue(CONTROL_CURVE));
@@ -309,16 +376,15 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     float* const outL = outputs[0];
     float* const outR = outputs[1];
 
-    slewSteps = (uint8_t)getParameterValue(CONTROL_SLEWTIME);
-    arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
-    if (arpeggiator.isActive) {
-        arpeggiator.range = (uint8_t)getParameterValue(CONTROL_ARPRANGE);
-        arpeggiator.arpStepsInSamples = (uint8_t)getParameterValue(CONTROL_ARPTIME);
-    } else {
-        arpeggiator.range = 0;
-        arpeggiator.index = 0;
+    float currPitch[2];
+    pt->processBlock(inputs, currPitch, frames);
+    if (getParameterValue(paramUseAudio) && currPitch[1] > .5f) {
+        currFrequency = realFrequency;
+        polyfotz.setNote((int) ( ( 12 * log(currPitch[0] / 220.0) / log(2.0) ) + 57.01 ));
+        targetFrequency = polyfotz.getFrequency(0);
+        slewStepsRemaining = slewSteps;
+        polyfotz.updateRotator();
     }
-
     uint32_t  offset = 0;
 
     for (uint32_t i=0; i<midiEventCount; i++) {
@@ -381,6 +447,7 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
   realFrequency = polyfotz.getFrequency(0) * pitchFactor();
   for (int i = 0; i < poly_; i++) {
     float freq;
+    arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
     if (arpeggiator.isActive) {
       freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
       for (int j = 0; j < voicingSize; j++) {
@@ -422,7 +489,7 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
   out.sqr_l = waveshaper(out.sqr_l) * level_;
   out.saw_r = waveshaper(out.saw_r) * level_;
   (slewStepsRemaining > 0) ? slewStepsRemaining-- : currFrequency = targetFrequency;
-  arpeggiator.advance(voicingSize);
+  arpeggiator.advance();
   return out;
 }
 

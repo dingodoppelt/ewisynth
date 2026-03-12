@@ -84,6 +84,7 @@ submodules:
 	git submodule update --init --recursive
 
 libs:
+	$(MAKE) -C aubio
 
 plugins: libs
 	$(MAKE) all -C plugins/Ewisynth
@@ -110,6 +111,7 @@ endif
 clean:
 	$(MAKE) clean -C dpf/utils/lv2-ttl-generator
 	$(MAKE) clean -C plugins/Ewisynth
+	$(MAKE) clean -C aubio
 	rm -rf bin build
 
 install: all

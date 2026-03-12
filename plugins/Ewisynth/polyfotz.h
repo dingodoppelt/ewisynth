@@ -30,7 +30,7 @@ private:
         }
     }
 public:
-    void setNote (uint8_t n) { masterNote.note = (0 <= n && n < 128) ? n : 69; }
+    void setNote (uint8_t n) { masterNote.note = (n < 128) ? n : 69; }
     void setTranspose(int8_t t) { masterNote.semitones = t; }
     void setOctave(int8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
@@ -42,7 +42,7 @@ public:
         }
     }
     void setVoicing(uint8_t v) { if (mode == 0 && activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
-    void setRotator(uint8_t r) { if (mode != r) mode = (r > 2 || r < 0) ? 0 : r; }
+    void setRotator(uint8_t r) { if (mode != r) mode = (r > 2) ? 0 : r; }
     void setDetune(float d) {
         if (detune != d) {
             detune = d;
@@ -57,7 +57,7 @@ public:
     }
     float getFrequency(uint8_t voice) {
         float modulation = 1.f;
-        if (pitchbend < 1.f) {
+        if (isPitchbendNegative()) {
             if (voice < banks[activeBank][activeVoicing].size()) {
                 modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
             } else {

@@ -9,6 +9,8 @@
 
 NAME = ewisynth
 
+AUBIO = ../../aubio/build/src
+
 # --------------------------------------------------------------
 # Plugin types to build
 
@@ -26,10 +28,15 @@ BUILD_LADSPA ?= false
 FILES_DSP = \
 	PluginEwisynth.cpp
 
+EXTRA_LIBS = $(AUBIO)/libaubio.a $(shell pkg-config --libs fftw3f)
+
 # --------------------------------------------------------------
 # Do some magic
 
 include ../../dpf/Makefile.plugins.mk
+
+BUILD_CXX_FLAGS += \
+	-I../../aubio/src \
 
 # --------------------------------------------------------------
 # Enable all selected plugin types
