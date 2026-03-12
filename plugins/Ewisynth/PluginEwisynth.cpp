@@ -327,10 +327,10 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             uint8_t status = midiEvents[i].data[0];
             uint8_t byte1 = midiEvents[i].data[1] & 127;
             
-            for (uint32_t j = 0; j <= midiEvents[i].frame; j++) {
+            for (uint32_t j = offset; j <= midiEvents[i].frame; j++) {
                 const StereoPair outputs = sumOscillators();
-                outL[j + offset] = outputs.sqr_l;
-                outR[j + offset] = outputs.saw_r;
+                outL[j] = outputs.sqr_l;
+                outR[j] = outputs.saw_r;
                 offset++;
             }
             switch (status & 0xf0) {
