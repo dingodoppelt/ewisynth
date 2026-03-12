@@ -10,7 +10,6 @@
 #define PLUGIN_EWISYNTH_H
 
 #include "DistrhoPlugin.hpp"
-#include "CParamSmooth.hpp"
 #include "polyfotz.h"
 #include "variableshapeoscillator.h"
 
