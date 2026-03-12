@@ -1,3 +1,5 @@
+// ported from https://github.com/BramGiesen/audio-to-cv-pitch-lv2 in 2026 by Nils Brederlow
+
 extern "C" {
     #include <aubio.h>
 }

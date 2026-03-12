@@ -321,15 +321,6 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
         case CONTROL_SLEWTIME:
             slewSteps = (uint8_t)value;
             break;
-        // case paramSensitivity:      // TODO: setting these doesn't work and crashes
-        //     // pt->setSens(value);
-        //     break;
-        // case paramHoldOutputPitch:
-        //     // pt->setHoldPitch((bool)value);
-        //     break;
-        // case paramConfidenceThreshold:
-        //     // pt->setThreshold(value);
-        //     break;
         case paramUsePolyfotz:
             if (value > .5) {
                 polyfotz.setPitchbend(0);
