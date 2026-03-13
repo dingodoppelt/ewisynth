@@ -25,7 +25,10 @@ private:
     uint8_t activeVoicing = 0;
     uint8_t activeBank = 0;
     float detuneTable[16] = {1};
-    float getMasterFrequency() { return masterNote.noteToFreq() * tune; }
+    float getMasterFrequency() {
+        const float mf = (masterNote.useMidi) ? masterNote.noteToFreq() * tune : masterNote.frequency * pow(2.f, (masterNote.octaves + masterNote.semitones) / 12.f);
+        return mf;
+    }
     void updateDetune() {
         for (int i = 0; i < polyphony; i++) {
             detuneTable[i] = pow(2., ((i * detune) / (polyphony << 6)) * cos(M_PI * i));

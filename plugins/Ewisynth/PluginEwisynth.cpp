@@ -94,8 +94,8 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.shortName = "Transp";
             parameter.symbol = "transpose";
             parameter.ranges.def = 0;
-            parameter.ranges.min = -6;
-            parameter.ranges.max = 6;
+            parameter.ranges.min = -12;
+            parameter.ranges.max = 12;
             parameter.unit = "semitones";
             parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
             break;
@@ -289,10 +289,10 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             polyfotz.setTune(value);
             break;
         case CONTROL_OCTAVE:
-            polyfotz.setOctave((uint8_t)value);
+            polyfotz.setOctave((int8_t)value);
             break;
         case CONTROL_TRANSPOSE:
-            polyfotz.setTranspose((uint8_t)value);
+            polyfotz.setTranspose((int8_t)value);
             break;
         case CONTROL_ARPRANGE:
             arpeggiator.range = (uint32_t)value;
@@ -323,9 +323,9 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             break;
         case paramUsePolyfotz:
             if (value > .5) {
-                polyfotz.setPitchbend(0);
+                polyfotz.setPitchbend(0); // pitchbend negative
             } else {
-                polyfotz.setPitchbend(8192);
+                polyfotz.setPitchbend(8192); // pitchbend neutral
             }
             break;
         case CONTROL_PRESSURE:
