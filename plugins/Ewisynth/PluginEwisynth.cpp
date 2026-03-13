@@ -371,7 +371,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     pt->processBlock(inputs, currPitch, frames);
     if (getParameterValue(paramUseAudio) && currPitch[1] > .5f) {
         currFrequency = realFrequency;
-        polyfotz.setNote((int) ( ( 12 * log(currPitch[0] / 220.0) / log(2.0) ) + 57.01 ));
+        polyfotz.setFrequency(currPitch[0]);
         targetFrequency = polyfotz.getFrequency(0);
         slewStepsRemaining = slewSteps;
         polyfotz.updateRotator();
