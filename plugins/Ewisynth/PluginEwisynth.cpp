@@ -90,7 +90,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = -3;
             parameter.ranges.max = 3;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_TRANSPOSE:
             parameter.name = "Transpose";
@@ -100,7 +100,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = -12;
             parameter.ranges.max = 12;
             parameter.unit = "semitones";
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_GAIN:
             parameter.name = "Gain";
@@ -130,7 +130,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0;
             parameter.ranges.max = 6000;
             parameter.unit = "frames";
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_ARPRANGE:
             parameter.name = "Arprange";
@@ -139,7 +139,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
             parameter.ranges.max = 12;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_ARPTIME:
             parameter.name = "Arptime";
@@ -149,7 +149,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0;
             parameter.ranges.max = 8000;
             parameter.unit = "frames";
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_POLYPHONY:
             parameter.name = "Polyphony";
@@ -158,7 +158,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 1;
             parameter.ranges.min = 1;
             parameter.ranges.max = 16;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_DETUNE:
             parameter.name = "Detune";
@@ -177,7 +177,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 2;
             parameter.ranges.min = 0;
             parameter.ranges.max = 5;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_VOICING:
             parameter.name = "Voicing";
@@ -186,7 +186,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
             parameter.ranges.max = 15;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_ROTATOR:
             parameter.name = "Rotator";
@@ -195,7 +195,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
             parameter.ranges.max = 2;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_PHASE:
             parameter.name = "Phase";
@@ -223,21 +223,21 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
             parameter.ranges.max = 127;
-            parameter.hints = kParameterIsAutomatable|kParameterIsInteger;
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_CURVE:
-            parameter.name = "Curve";
-            parameter.shortName = "Curve";
-            parameter.symbol = "curve";
-            parameter.ranges.def = 1.0f;
-            parameter.ranges.min = 1.0f;
-            parameter.ranges.max = 10.0f;
+            parameter.name = "Pressure Sensitivity";
+            parameter.shortName = "PressSens";
+            parameter.symbol = "pressSens";
+            parameter.ranges.def = 0.5f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.0f;
             parameter.hints = kParameterIsAutomatable;
             break;
         case CONTROL_SENSITIVITY:
-            parameter.name = "Sensitivity";
-            parameter.shortName = "Sens";
-            parameter.symbol = "sensitivity";
+            parameter.name = "Pitch Sensitivity";
+            parameter.shortName = "PitSens";
+            parameter.symbol = "pitchSensitivity";
             parameter.ranges.def = 60.0f;
             parameter.ranges.min = 0.0f;
             parameter.ranges.max = 60.0f;
@@ -410,6 +410,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                          uint32_t frames,
                          const MidiEvent* midiEvents, uint32_t midiEventCount) {
 
+    float curve = getParameterValue(CONTROL_CURVE);
     // get the left and right audio outputs
     float* const outL = outputs[0];
     float* const outR = outputs[1];
@@ -432,7 +433,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             
             for (uint32_t j = offset; j <= midiEvents[i].frame; j++) {
                 if (getParameterValue(CONTROL_USE_RMS)) {
-                    currPressure = pow(ef->update(inputs[0][j]), getParameterValue(CONTROL_CURVE));
+                    currPressure = pow(ef->update(inputs[0][j]), (1.f - curve) / curve);
                     currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
                 }
                 const StereoPair outputs = sumOscillators();
@@ -461,7 +462,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
 
     for (uint32_t j = offset; j < frames; j++) {
         if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
-            currPressure = pow(ef->update(inputs[0][j]), getParameterValue(CONTROL_CURVE));
+            currPressure = pow(ef->update(inputs[0][j]), (1.f - curve) / curve);
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
         }
         const StereoPair outputs = sumOscillators();
