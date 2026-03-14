@@ -18,8 +18,6 @@ private:
     float lastKnownPitchInHz;
     float lastKnownPitchConfidence;
 
-    float sensitivity;
-    float threshold;
     bool  holdOutputPitch;
     
     
@@ -45,6 +43,8 @@ private:
     }
     
 public:
+    float threshold;
+    float sensitivity;
     PitchTracker(double sr, uint32_t bufsize)
     : detectedPitch(new_fvec(1)),
       pitchDetector(nullptr)

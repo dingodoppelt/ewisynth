@@ -116,7 +116,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0.7f;
             parameter.ranges.min = 0.0f;
             parameter.ranges.max = 1.0f;
-            parameter.unit = "percent";
+            parameter.unit = "%";
             parameter.hints = kParameterIsAutomatable;
             break;
         case CONTROL_SLEWTIME:
@@ -201,7 +201,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0.2f;
             parameter.ranges.min = 0.0f;
             parameter.ranges.max = 1.0f;
-            parameter.unit = "percent";
+            parameter.unit = "%";
             parameter.hints = kParameterIsAutomatable;
             break;
         case CONTROL_SHAPE:
@@ -231,7 +231,26 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.max = 10.0f;
             parameter.hints = kParameterIsAutomatable;
             break;
-        case paramUseAudio:
+        case CONTROL_SENSITIVITY:
+            parameter.name = "Sensitivity";
+            parameter.shortName = "Sens";
+            parameter.symbol = "sensitivity";
+            parameter.ranges.def = 60.0f;
+            parameter.ranges.min = 0.0f;
+            parameter.ranges.max = 60.0f;
+            parameter.hints = kParameterIsAutomatable;
+            break;
+        case CONTROL_THRESHOLD:
+            parameter.name = "Threshold";
+            parameter.shortName = "Thres";
+            parameter.symbol = "threshold";
+            parameter.ranges.def = 80.0f;
+            parameter.ranges.min = 0.0f;
+            parameter.ranges.max = 100.0f;
+            parameter.unit = "%";
+            parameter.hints = kParameterIsAutomatable;
+            break;
+        case CONTROL_USEAUDIO:
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
             parameter.name = "Use Audio Input";
             parameter.symbol = "useAudioIn";
@@ -239,7 +258,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0;
             parameter.ranges.max = 1;
             break;
-        case paramUsePolyfotz:
+        case CONTROL_USEPOLYFOTZ:
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
             parameter.name = "Toggle Harmony";
             parameter.symbol = "toggleHarmony";
@@ -321,7 +340,13 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
         case CONTROL_SLEWTIME:
             slewSteps = (uint8_t)value;
             break;
-        case paramUsePolyfotz:
+        case CONTROL_SENSITIVITY:
+            if (pt != nullptr) pt->sensitivity = value;
+            break;
+        case CONTROL_THRESHOLD:
+            if (pt != nullptr) pt->threshold = value;
+            break;
+        case CONTROL_USEPOLYFOTZ:
             if (value > .5) {
                 polyfotz.setPitchbend(0); // pitchbend negative
             } else {
@@ -369,7 +394,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
 
     float currPitch[2];
     pt->processBlock(inputs, currPitch, frames);
-    if (getParameterValue(paramUseAudio) && currPitch[1] > .5f) {
+    if (getParameterValue(CONTROL_USEAUDIO) && currPitch[1] > .5f) {
         currFrequency = realFrequency;
         polyfotz.setFrequency(currPitch[0]);
         targetFrequency = polyfotz.getFrequency(0);

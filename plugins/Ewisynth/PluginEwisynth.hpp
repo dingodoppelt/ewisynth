@@ -57,8 +57,10 @@ public:
         CONTROL_SHAPE,
         CONTROL_PRESSURE,
         CONTROL_CURVE,
-        paramUseAudio,
-        paramUsePolyfotz,
+        CONTROL_USEAUDIO,
+        CONTROL_USEPOLYFOTZ,
+        CONTROL_SENSITIVITY,
+        CONTROL_THRESHOLD,
         CONTROL_NR
     };
 
