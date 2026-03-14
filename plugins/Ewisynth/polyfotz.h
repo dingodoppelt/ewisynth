@@ -16,8 +16,10 @@ private:
         bool useMidi = true;
         float frequency = 440.f;
         uint8_t note = 69;
+        uint8_t lastNote = 69;
         int8_t semitones = 0;
         int8_t octaves = 0;
+        uint8_t freqToNote(float f) { return (uint8_t)((12.f * log2(f / 440.f)) + 69); }
         uint8_t getEffectiveNote() { return note + semitones + octaves; }
         float   noteToFreq() { return (useMidi) ?  powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f : frequency; }
     } masterNote;
@@ -36,7 +38,13 @@ private:
     }
 public:
     void setNote (uint8_t n) { masterNote.note = (n < 128) ? n : 69; masterNote.useMidi = true; }
-    void setFrequency (float f) { masterNote.frequency = f; masterNote.useMidi = false; }
+    void setFrequency (float f) {
+        masterNote.frequency = f;
+        masterNote.lastNote = masterNote.note;
+        masterNote.note = masterNote.freqToNote(f);
+        masterNote.useMidi = false;
+        if (masterNote.note != masterNote.lastNote) updateRotator();
+    }
     void setTranspose(int8_t t) { masterNote.semitones = t; }
     void setOctave(int8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }

@@ -374,7 +374,6 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         polyfotz.setFrequency(currPitch[0]);
         targetFrequency = polyfotz.getFrequency(0);
         slewStepsRemaining = slewSteps;
-        polyfotz.updateRotator();
     }
     uint32_t  offset = 0;
 
