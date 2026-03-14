@@ -1,4 +1,3 @@
-#include <cstdint>
 #define MAX_RMS_BUFFER 2048
 
 class EnvelopeFollower {
