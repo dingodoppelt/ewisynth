@@ -13,6 +13,7 @@
 #include "polyfotz.h"
 #include "variableshapeoscillator.h"
 #include "pitchtracker.h"
+#include "rms.h"
 #include <cstdint>
 
 #define MAX_POLYPHONY 16
@@ -61,6 +62,8 @@ public:
         CONTROL_USEPOLYFOTZ,
         CONTROL_SENSITIVITY,
         CONTROL_THRESHOLD,
+        CONTROL_USE_RMS,
+        CONTROL_RMS_LEN,
         CONTROL_NR
     };
 
@@ -201,7 +204,8 @@ private:
         }
     } arpeggiator;
 
-    PitchTracker* pt;
+    PitchTracker*       pt;
+    EnvelopeFollower*   ef;
 
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEwisynth)
