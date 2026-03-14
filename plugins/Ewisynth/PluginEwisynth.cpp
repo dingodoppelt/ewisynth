@@ -17,7 +17,8 @@ START_NAMESPACE_DISTRHO
 
 PluginEwisynth::PluginEwisynth()
     : Plugin(CONTROL_NR, presetCount, 0),  // paramCount param(s), presetCount program(s), 0 states
-      pt(nullptr)
+      pt(nullptr),
+      ef(nullptr)
 {
     const float sample_rate = getSampleRate();
     polyfotz.Init(MAX_POLYPHONY);
@@ -35,10 +36,12 @@ PluginEwisynth::PluginEwisynth()
     }
 
     pt = new PitchTracker(sample_rate, AUBIOBUFSIZE);
-
+    ef = new EnvelopeFollower();
 }
 
 PluginEwisynth::~PluginEwisynth() {
+    delete pt;
+    delete ef;
 }
 
 // -----------------------------------------------------------------------
@@ -241,9 +244,9 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.hints = kParameterIsAutomatable;
             break;
         case CONTROL_THRESHOLD:
-            parameter.name = "Threshold";
-            parameter.shortName = "Thres";
-            parameter.symbol = "threshold";
+            parameter.name = "Pitch Threshold";
+            parameter.shortName = "PitThres";
+            parameter.symbol = "pitchThreshold";
             parameter.ranges.def = 80.0f;
             parameter.ranges.min = 0.0f;
             parameter.ranges.max = 100.0f;
@@ -257,6 +260,22 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
             parameter.ranges.max = 1;
+            break;
+        case CONTROL_USE_RMS:
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
+            parameter.name = "Envelope Follower";
+            parameter.symbol = "envFollow";
+            parameter.ranges.def = 0;
+            parameter.ranges.min = 0;
+            parameter.ranges.max = 1;
+            break;
+        case CONTROL_RMS_LEN:
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
+            parameter.name = "RMS Window Length";
+            parameter.symbol = "rmsLen";
+            parameter.ranges.def = 1024;
+            parameter.ranges.min = getBufferSize();
+            parameter.ranges.max = MAX_RMS_BUFFER;
             break;
         case CONTROL_USEPOLYFOTZ:
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger | kParameterIsBoolean;
@@ -357,6 +376,9 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             currPressure = pow(value / 127.f, getParameterValue(CONTROL_CURVE));
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
             break;
+        case CONTROL_RMS_LEN:
+            if (ef != nullptr) ef->init((uint16_t)value);
+            break;
         default:
             break;
     }
@@ -392,7 +414,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     float* const outL = outputs[0];
     float* const outR = outputs[1];
 
-    float currPitch[2];
+        float currPitch[2];
     pt->processBlock(inputs, currPitch, frames);
     if (getParameterValue(CONTROL_USEAUDIO) && currPitch[1] > .5f) {
         currFrequency = realFrequency;
@@ -409,6 +431,10 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             uint8_t byte1 = midiEvents[i].data[1] & 127;
             
             for (uint32_t j = offset; j <= midiEvents[i].frame; j++) {
+                if (getParameterValue(CONTROL_USE_RMS)) {
+                    currPressure = pow(ef->update(inputs[0][j]), getParameterValue(CONTROL_CURVE));
+                    currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+                }
                 const StereoPair outputs = sumOscillators();
                 outL[j] = outputs.sqr_l;
                 outR[j] = outputs.saw_r;
@@ -430,7 +456,14 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             }
         }
     }
+
+    // envelope follower
+
     for (uint32_t j = offset; j < frames; j++) {
+        if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
+            currPressure = pow(ef->update(inputs[0][j]), getParameterValue(CONTROL_CURVE));
+            currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+        }
         const StereoPair outputs = sumOscillators();
         outL[j] = outputs.sqr_l;
         outR[j] = outputs.saw_r;
