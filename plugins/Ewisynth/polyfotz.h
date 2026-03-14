@@ -7,19 +7,19 @@ class PolyFotz {
 private:
     float pitchbend = 1.f;
     float normalizedPitchbend = 0.f;
-    float tune = 1.f;
     float detune = 0.f;
     float phase = 0;
     uint8_t maxPolyphony = 16;
     uint8_t polyphony = 1;
     struct MasterNote {
+        float tune = 1.f;
         bool useMidi = true;
         float frequency = 440.f;
         uint8_t note = 69;
         uint8_t lastNote = 69;
         int8_t semitones = 0;
         int8_t octaves = 0;
-        uint8_t freqToNote(float f) { return (uint8_t)((12.f * log2(f / 440.f)) + 69); }
+        uint8_t freqToNote(float f) { return (uint8_t)((12.f * log2(f / 440.f * tune)) + 69); }
         uint8_t getEffectiveNote() { return note + semitones + octaves; }
         float   noteToFreq() { return (useMidi) ?  powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f : frequency; }
     } masterNote;
@@ -28,7 +28,7 @@ private:
     uint8_t activeBank = 0;
     float detuneTable[16] = {1};
     float getMasterFrequency() {
-        const float mf = (masterNote.useMidi) ? masterNote.noteToFreq() * tune : masterNote.frequency * pow(2.f, (masterNote.octaves + masterNote.semitones) / 12.f);
+        const float mf = (masterNote.useMidi) ? masterNote.noteToFreq() * masterNote.tune: masterNote.frequency * pow(2.f, (masterNote.octaves + masterNote.semitones) / 12.f);
         return mf;
     }
     void updateDetune() {
@@ -48,7 +48,7 @@ public:
     void setTranspose(int8_t t) { masterNote.semitones = t; }
     void setOctave(int8_t o) { masterNote.octaves = o * 12; }
     void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
-    void setTune(float t) { tune = pow(2.0, t); }
+    void setTune(float t) { masterNote.tune = pow(2.0, t); }
     void setBank(uint8_t b) {
         if (activeBank != b) {
             activeVoicing = activeVoicing % banks[b].size();
