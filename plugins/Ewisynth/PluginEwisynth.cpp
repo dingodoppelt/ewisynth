@@ -285,6 +285,14 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0;
             parameter.ranges.max = 1;
             break;
+        case CONTROL_PRESS_CC:
+            parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
+            parameter.name = "MIDI Pressure CC";
+            parameter.symbol = "pressCC";
+            parameter.ranges.def = 96;
+            parameter.ranges.min = 0;
+            parameter.ranges.max = 127;
+            break;
     }
 }
 
@@ -359,6 +367,9 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
         case CONTROL_SLEWTIME:
             slewSteps = (uint8_t)value;
             break;
+        case CONTROL_PRESS_CC:
+            pressureCC = (uint8_t)value;
+            break;
         case CONTROL_SENSITIVITY:
             if (pt != nullptr) pt->sensitivity = value;
             break;
@@ -415,11 +426,29 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     float* const outL = outputs[0];
     float* const outR = outputs[1];
 
-        float currPitch[2];
+    float currPitch[2];
     pt->processBlock(inputs, currPitch, frames);
     if (getParameterValue(CONTROL_USEAUDIO) && currPitch[1] > .5f) {
         currFrequency = realFrequency;
-        polyfotz.setFrequency(currPitch[0]);
+        if (polyfotz.setFrequency(currPitch[0])) {
+            // The note playing is different from the previous one
+            // send note_off for last note
+            MidiEvent note_off;
+            note_off.frame = 0;
+            note_off.size = 3;
+            note_off.data[0] = 0x90;
+            note_off.data[1] = polyfotz.getLastNote();
+            note_off.data[2] = (uint8_t)(0);
+            writeMidiEvent(note_off);
+            // send note on for new note
+            MidiEvent note_on;
+            note_on.frame = 0;
+            note_on.size = 3;
+            note_on.data[0] = 0x90;
+            note_on.data[1] = polyfotz.getNote();
+            note_on.data[2] = (uint8_t)(currPressure * 127.f);
+            writeMidiEvent(note_on);
+        };
         targetFrequency = polyfotz.getFrequency(0);
         slewStepsRemaining = slewSteps;
     }
@@ -464,6 +493,13 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
             currPressure = pow(ef->update(inputs[0][j]), (1.f - curve) / curve);
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+            MidiEvent out_pressure;
+            out_pressure.frame = j;
+            out_pressure.size = 3;
+            out_pressure.data[0] = 0xB0; // CC
+            out_pressure.data[1] = pressureCC; // CC Num
+            out_pressure.data[2] = (uint8_t)(currPressure * 127.f);
+            writeMidiEvent(out_pressure);
         }
         const StereoPair outputs = sumOscillators();
         outL[j] = outputs.sqr_l;

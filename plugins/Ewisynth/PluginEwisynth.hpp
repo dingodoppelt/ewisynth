@@ -64,6 +64,7 @@ public:
         CONTROL_THRESHOLD,
         CONTROL_USE_RMS,
         CONTROL_RMS_LEN,
+        CONTROL_PRESS_CC,
         CONTROL_NR
     };
 
@@ -143,6 +144,7 @@ private:
     float           fParams[CONTROL_NR];
     double          fSampleRate;
 
+    uint8_t pressureCC = 96;
     float currFrequency = 440.f;
     float targetFrequency = 440.f;
     float realFrequency = 440.f;

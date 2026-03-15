@@ -38,12 +38,14 @@ private:
     }
 public:
     void setNote (uint8_t n) { masterNote.note = (n < 128) ? n : 69; masterNote.useMidi = true; }
-    void setFrequency (float f) {
+    bool setFrequency (float f) {
         masterNote.frequency = f;
         masterNote.lastNote = masterNote.note;
         masterNote.note = masterNote.freqToNote(f);
         masterNote.useMidi = false;
-        if (masterNote.note != masterNote.lastNote) updateRotator();
+        bool isNewNote = (masterNote.note != masterNote.lastNote);
+        if (isNewNote) updateRotator();
+        return isNewNote;
     }
     void setTranspose(int8_t t) { masterNote.semitones = t; }
     void setOctave(int8_t o) { masterNote.octaves = o * 12; }
@@ -81,6 +83,12 @@ public:
             modulation = detuneTable[voice] * pitchbend;
         }
         return getMasterFrequency() * modulation;
+    }
+    uint8_t getNote() {
+        return masterNote.note;
+    }
+    uint8_t getLastNote() {
+        return masterNote.lastNote;
     }
     void updateRotator() {
         switch (mode) {
