@@ -112,7 +112,7 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
-    void initAudioPort(bool input, uint32_t index, AudioPort& port);
+    void initAudioPort(bool input, uint32_t index, AudioPort& port) override;
     void initParameter(uint32_t index, Parameter& parameter) override;
     void initProgramName(uint32_t index, String& programName) override;
 
@@ -153,7 +153,6 @@ private:
     float slewStepsRemaining = 0.f;
     float exponent() { return (slewSteps > 0) ? slewStepsRemaining / slewSteps : 1.f; }
     float pitchFactor() { return powf(freqRatio(), exponent()); }
-    float currBendFactor = 1.f;
     float currPulseWidth = .5f;
     float currPressure = 0.f;
     float currShape = 0.f;

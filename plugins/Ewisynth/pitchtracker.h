@@ -14,7 +14,6 @@ private:
     uint32_t inputBufferPos;
     uint32_t inputBufferSize;
     
-    float lastKnownPitchLinear;
     float lastKnownPitchInHz;
     float lastKnownPitchConfidence;
 

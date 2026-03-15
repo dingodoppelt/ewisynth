@@ -8,7 +8,6 @@ private:
     float pitchbend = 1.f;
     float normalizedPitchbend = 0.f;
     float detune = 0.f;
-    float phase = 0;
     uint8_t maxPolyphony = 16;
     uint8_t polyphony = 1;
     struct MasterNote {
