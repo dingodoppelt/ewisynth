@@ -46,6 +46,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Install FFTW3
+          run: sudo apt-get install mingw-w64-fftw3
       - uses: distrho/dpf-makefile-action@v1
         with:
           target: ${{ matrix.target }}
