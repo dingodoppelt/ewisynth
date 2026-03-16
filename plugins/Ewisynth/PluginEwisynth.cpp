@@ -7,6 +7,7 @@
  */
 
 #include "PluginEwisynth.hpp"
+#include "MicrotrackerModel.h"
 #include <cstdint>
 
 #define AUBIOBUFSIZE 2048
@@ -18,7 +19,9 @@ START_NAMESPACE_DISTRHO
 PluginEwisynth::PluginEwisynth()
     : Plugin(CONTROL_NR, presetCount, 0),  // paramCount param(s), presetCount program(s), 0 states
       pt(nullptr),
-      ef(nullptr)
+      ef(nullptr),
+      filterL(nullptr),
+      filterR(nullptr)
 {
     const float sample_rate = getSampleRate();
     polyfotz.Init(MAX_POLYPHONY);
@@ -37,11 +40,15 @@ PluginEwisynth::PluginEwisynth()
 
     pt = new PitchTracker(sample_rate, AUBIOBUFSIZE);
     ef = new EnvelopeFollower();
+    filterL = new MicrotrackerMoog(sample_rate);
+    filterR = new MicrotrackerMoog(sample_rate);
 }
 
 PluginEwisynth::~PluginEwisynth() {
     delete pt;
     delete ef;
+    delete filterL;
+    delete filterR;
 }
 
 // -----------------------------------------------------------------------
@@ -293,6 +300,30 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0;
             parameter.ranges.max = 127;
             break;
+        case CONTROL_FILT_CUTOFF:
+            parameter.hints = kParameterIsAutomatable;
+            parameter.name = "Filter Cutoff Frequency";
+            parameter.symbol = "lpfCutoff";
+            parameter.ranges.def = 0.f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = (float)MAX_FILTER_CUTOFF;
+            break;
+        case CONTROL_FILT_RESO:
+            parameter.hints = kParameterIsAutomatable;
+            parameter.name = "Filter Resonance";
+            parameter.symbol = "filterReso";
+            parameter.ranges.def = 0.f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.f;
+            break;
+        case CONTROL_FILT_CURVE:
+            parameter.hints = kParameterIsAutomatable;
+            parameter.name = "Filter Curve";
+            parameter.symbol = "filterCurve";
+            parameter.ranges.def = 0.5f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.f;
+            break;
     }
 }
 
@@ -389,6 +420,14 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             break;
         case CONTROL_RMS_LEN:
             if (ef != nullptr) ef->init((uint16_t)value);
+            break;
+        case CONTROL_FILT_CUTOFF:
+            if (filterL != nullptr) filterL->SetCutoff(getFilterCurve(value) * (float)MAX_FILTER_CUTOFF);
+            if (filterR != nullptr) filterR->SetCutoff(getFilterCurve(value) * (float)MAX_FILTER_CUTOFF);
+            break;
+        case CONTROL_FILT_RESO:
+            if (filterL != nullptr) filterL->SetResonance(value);
+            if (filterR != nullptr) filterR->SetResonance(value);
             break;
         default:
             break;
@@ -505,6 +544,8 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         outL[j] = outputs.sqr_l;
         outR[j] = outputs.saw_r;
     }
+    filterL->Process(outL, frames);
+    filterR->Process(outR, frames);
 }
 
 // -----------------------------------------------------------------------

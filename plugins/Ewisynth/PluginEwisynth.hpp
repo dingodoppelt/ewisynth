@@ -14,9 +14,11 @@
 #include "variableshapeoscillator.h"
 #include "pitchtracker.h"
 #include "rms.h"
+#include "MicrotrackerModel.h"
 #include <cstdint>
 
 #define MAX_POLYPHONY 16
+#define MAX_FILTER_CUTOFF 8000
 
 START_NAMESPACE_DISTRHO
 
@@ -65,6 +67,9 @@ public:
         CONTROL_USE_RMS,
         CONTROL_RMS_LEN,
         CONTROL_PRESS_CC,
+        CONTROL_FILT_CUTOFF,
+        CONTROL_FILT_RESO,
+        CONTROL_FILT_CURVE,
         CONTROL_NR
     };
 
@@ -207,6 +212,16 @@ private:
 
     PitchTracker*       pt;
     EnvelopeFollower*   ef;
+    MicrotrackerMoog*   filterL;
+    MicrotrackerMoog*   filterR;
+
+    // https://www.desmos.com/calculator/lw0xsmwglr
+    float getFilterCurve(float v) {
+        const float x = v / (float)MAX_FILTER_CUTOFF;
+        const float b = 1.01f;
+        const float a = b / (getParameterValue(CONTROL_FILT_CURVE) - b) + 2.f;
+        return (a - b) * x / (a * x - b);
+    }
 
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEwisynth)
