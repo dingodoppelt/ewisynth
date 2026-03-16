@@ -96,10 +96,10 @@ This software was created by *Nils Brederlow*.
 ## Acknowledgements
 
 This project is built using the DISTRHO Plugin Framework ([DPF]) and set up
-with the [cookiecutter-dpf-effect] project template.
-The oscillator code is originally by Emilie Gillet [MutableInstruments]
-It uses the [AUBIO]/[FFTW3] libraries for pitchtracking.
-The filter code stems from [MoogLadders]
+with the [cookiecutter-dpf-effect] project template.  
+The oscillator code is originally by Emilie Gillet [MutableInstruments]  
+It uses the [AUBIO]/[FFTW3] libraries for pitchtracking.  
+The filter code stems from [MoogLadders]  
 
 [cookiecutter-dpf-effect]: https://github.com/SpotlightKid/cookiecutter-dpf-effect
 [DPF]: https://github.com/DISTRHO/DPF
