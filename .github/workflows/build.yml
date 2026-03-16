@@ -31,6 +31,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Install dependencies
+        run: |
+          brew install fftw
       - uses: distrho/dpf-makefile-action@v1
         with:
           target: ${{ matrix.target }}
