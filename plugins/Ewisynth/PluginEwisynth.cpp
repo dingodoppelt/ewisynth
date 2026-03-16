@@ -414,16 +414,22 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
                 polyfotz.setPitchbend(8192); // pitchbend neutral
             }
             break;
+        case CONTROL_CURVE:
+            value = getParameterValue(CONTROL_PRESSURE);
+            // fall through to next case so take the correct value
         case CONTROL_PRESSURE:
-            currPressure = pow(value / 127.f, getParameterValue(CONTROL_CURVE));
+            currPressure = getCurve(value, 127.f, getParameterValue(CONTROL_CURVE), false);
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
             break;
         case CONTROL_RMS_LEN:
             if (ef != nullptr) ef->init((uint16_t)value);
             break;
+        case CONTROL_FILT_CURVE:
+            value = getParameterValue(CONTROL_FILT_CUTOFF);
+            // fall through to next case so take the correct value
         case CONTROL_FILT_CUTOFF:
-            if (filterL != nullptr) filterL->SetCutoff(getFilterCurve(value) * (float)MAX_FILTER_CUTOFF);
-            if (filterR != nullptr) filterR->SetCutoff(getFilterCurve(value) * (float)MAX_FILTER_CUTOFF);
+            if (filterL != nullptr) filterL->SetCutoff(getCurve(value, MAX_FILTER_CUTOFF, getParameterValue(CONTROL_FILT_CURVE), true));
+            if (filterR != nullptr) filterR->SetCutoff(getCurve(value, MAX_FILTER_CUTOFF, getParameterValue(CONTROL_FILT_CURVE), true));
             break;
         case CONTROL_FILT_RESO:
             if (filterL != nullptr) filterL->SetResonance(value);

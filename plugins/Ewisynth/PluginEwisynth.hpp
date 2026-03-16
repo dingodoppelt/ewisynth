@@ -216,11 +216,13 @@ private:
     MicrotrackerMoog*   filterR;
 
     // https://www.desmos.com/calculator/lw0xsmwglr
-    float getFilterCurve(float v) {
-        const float x = v / (float)MAX_FILTER_CUTOFF;
+    float getCurve(float v, float max, float curve, bool scaled) {
+        const float x = v / max;
         const float b = 1.01f;
-        const float a = b / (getParameterValue(CONTROL_FILT_CURVE) - b) + 2.f;
-        return (a - b) * x / (a * x - b);
+        const float a = b / (curve - b) + 2.f;
+        float y = (a - b) * x / (a * x - b);
+        if (scaled) y *= max;
+        return y;
     }
 
 
