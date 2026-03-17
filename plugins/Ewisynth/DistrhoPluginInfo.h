@@ -33,10 +33,10 @@
 #define DISTRHO_PLUGIN_WANT_MIDI_OUTPUT 1
 
 // See http://lv2plug.in/ns/lv2core#ref-classes
-#define DISTRHO_PLUGIN_LV2_CATEGORY "lv2:AmplifierPlugin"
+#define DISTRHO_PLUGIN_LV2_CATEGORY "lv2:OscillatorPlugin"
 // See https://github.com/DISTRHO/DPF/blob/1504e7d327bfe0eac6a889cecd199c963d35532f/distrho/DistrhoInfo.hpp#L717
-#define DISTRHO_PLUGIN_VST3_CATEGORIES "Fx|Tools|Stereo"
+#define DISTRHO_PLUGIN_VST3_CATEGORIES "Instrument|Synth|Stereo"
 // See https://github.com/DISTRHO/DPF/blob/1504e7d327bfe0eac6a889cecd199c963d35532f/distrho/DistrhoInfo.hpp#L761
-#define DISTRHO_PLUGIN_CLAP_FEATURES "audio-effect", "utility", "stereo"
+#define DISTRHO_PLUGIN_CLAP_FEATURES "instrument", "synthesizer", "stereo"
 
 #endif // DISTRHO_PLUGIN_INFO_H
