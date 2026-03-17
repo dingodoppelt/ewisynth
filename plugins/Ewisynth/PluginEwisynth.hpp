@@ -175,6 +175,7 @@ private:
     }
     struct Arpeggiator {
         bool isActive = false;
+        bool trigger = false;
         uint8_t range = 0;
         uint8_t index = 1;
         int8_t indexIncrement = 1;
@@ -196,6 +197,7 @@ private:
                     arpStepsRemaining--;
                 } else {
                     arpStepsRemaining = arpStepsInSamples;
+                    trigger = true;
                     index += indexIncrement;
                 }
             }

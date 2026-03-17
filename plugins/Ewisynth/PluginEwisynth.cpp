@@ -474,6 +474,8 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     float* const outL = outputs[0];
     float* const outR = outputs[1];
     float currPitch[2];
+    uint32_t  offset = 0;
+
     pt->processBlock(inputs, currPitch, frames);
     if (getParameterValue(CONTROL_USEAUDIO) && currPitch[1] > .5f) {
         currFrequency = realFrequency;
@@ -481,7 +483,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             // The note playing is different from the previous one
             // send note_off for last note
             MidiEvent note_off;
-            note_off.frame = 0;
+            note_off.frame = offset;
             note_off.size = 3;
             note_off.data[0] = 0x90;
             note_off.data[1] = polyfotz.getLastNote();
@@ -489,7 +491,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             writeMidiEvent(note_off);
             // send note on for new note
             MidiEvent note_on;
-            note_on.frame = 0;
+            note_on.frame = offset;
             note_on.size = 3;
             note_on.data[0] = 0x90;
             note_on.data[1] = polyfotz.getNote();
@@ -499,11 +501,11 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         targetFrequency = polyfotz.getFrequency(0);
         slewStepsRemaining = slewSteps;
     }
-    uint32_t  offset = 0;
 
     for (uint32_t i=0; i<midiEventCount; i++) {
         if (midiEvents[i].size <= 3)
         {
+            // MIDI in
             uint8_t status = midiEvents[i].data[0];
             uint8_t byte1 = midiEvents[i].data[1] & 127;
             
@@ -518,8 +520,18 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                 const StereoPair outputs = sumOscillators();
                 outL[j] = outputs.sqr_l;
                 outR[j] = outputs.saw_r;
+                if (arpeggiator.trigger) {
+                    MidiEvent note_on;
+                    note_on.frame = offset + j;
+                    note_on.size = 3;
+                    note_on.data[0] = 0x90;
+                    note_on.data[1] = polyfotz.getNote();
+                    note_on.data[2] = (uint8_t)(currPressure * 127.f);
+                    writeMidiEvent(note_on);
+                }
                 offset++;
             }
+            // MIDI in
             switch (status & 0xf0) {
                 case 0x90:
                     currFrequency = realFrequency;
