@@ -36,7 +36,11 @@ private:
         }
     }
 public:
-    void setNote (uint8_t n) { masterNote.note = (n < 128) ? n : 69; masterNote.useMidi = true; }
+    void setNote (uint8_t n) {
+        masterNote.note = (n < 128) ? n : 69;
+        masterNote.useMidi = true;
+        updateRotator();
+    }
     bool setFrequency (float f) {
         masterNote.frequency = f;
         masterNote.lastNote = masterNote.note;

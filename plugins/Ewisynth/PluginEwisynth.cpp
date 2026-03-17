@@ -540,7 +540,6 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                     polyfotz.setNote(byte1);
                     targetFrequency = polyfotz.getFrequency(0);
                     slewStepsRemaining = slewSteps;
-                    polyfotz.updateRotator();
                     break;
                 case 0xE0:
                     polyfotz.setPitchbend(midiEvents[i].data[2] << 7 | midiEvents[i].data[1]); // 2^( ((pitchbend - 8192) / 8192 * bendrange = 2 / max_pitchbend = 16383) / 12 )
