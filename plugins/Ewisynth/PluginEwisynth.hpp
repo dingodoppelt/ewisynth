@@ -48,28 +48,28 @@ public:
         CONTROL_TRANSPOSE,
         CONTROL_GAIN,
         CONTROL_LEVEL,
+        CONTROL_SHAPE,
+        CONTROL_PHASE,
+        CONTROL_POLYPHONY,
+        CONTROL_DETUNE,
         CONTROL_SLEWTIME,
         CONTROL_ARPRANGE,
         CONTROL_ARPTIME,
-        CONTROL_POLYPHONY,
-        CONTROL_DETUNE,
+        CONTROL_USEPOLYFOTZ,
         CONTROL_BANK,
         CONTROL_VOICING,
         CONTROL_ROTATOR,
-        CONTROL_PHASE,
-        CONTROL_SHAPE,
         CONTROL_PRESSURE,
         CONTROL_CURVE,
         CONTROL_USEAUDIO,
-        CONTROL_USEPOLYFOTZ,
         CONTROL_SENSITIVITY,
         CONTROL_THRESHOLD,
         CONTROL_USE_RMS,
         CONTROL_RMS_LEN,
-        CONTROL_PRESS_CC,
         CONTROL_FILT_CUTOFF,
         CONTROL_FILT_RESO,
         CONTROL_FILT_CURVE,
+        CONTROL_PRESS_CC,
         CONTROL_NR
     };
 
@@ -225,6 +225,16 @@ private:
         float y = (a - b) * x / (a * x - b);
         if (scaled) y *= max;
         return y;
+    }
+
+    MidiEvent packEvent(uint8_t status, uint8_t data1, uint8_t data2, uint16_t offset) {
+        MidiEvent ev;
+        ev.frame = offset;
+        ev.size = 3;
+        ev.data[0] = status;
+        ev.data[1] = data1;
+        ev.data[2] = data2;
+        return ev;
     }
 
 

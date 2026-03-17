@@ -318,7 +318,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             break;
         case CONTROL_FILT_CURVE:
             parameter.hints = kParameterIsAutomatable;
-            parameter.name = "Filter Curve";
+            parameter.name = "Pressure to Filter Cutoff Sens";
             parameter.symbol = "filterCurve";
             parameter.ranges.def = 0.5f;
             parameter.ranges.min = 0.f;
@@ -462,8 +462,6 @@ void PluginEwisynth::activate() {
     // plugin is activated
 }
 
-
-
 void PluginEwisynth::run(const float** inputs, float** outputs,
                          uint32_t frames,
                          const MidiEvent* midiEvents, uint32_t midiEventCount) {
@@ -482,21 +480,9 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         if (polyfotz.setFrequency(currPitch[0])) {
             // The note playing is different from the previous one
             // send note_off for last note
-            MidiEvent note_off;
-            note_off.frame = offset;
-            note_off.size = 3;
-            note_off.data[0] = 0x90;
-            note_off.data[1] = polyfotz.getLastNote();
-            note_off.data[2] = (uint8_t)(0);
-            writeMidiEvent(note_off);
+            writeMidiEvent(packEvent(0x90, polyfotz.getLastNote(), 0, offset));
             // send note on for new note
-            MidiEvent note_on;
-            note_on.frame = offset;
-            note_on.size = 3;
-            note_on.data[0] = 0x90;
-            note_on.data[1] = polyfotz.getNote();
-            note_on.data[2] = (uint8_t)(currPressure * 127.f);
-            writeMidiEvent(note_on);
+            writeMidiEvent(packEvent(0x90, polyfotz.getNote(), (uint8_t)(currPressure * 127.f), offset));
         };
         targetFrequency = polyfotz.getFrequency(0);
         slewStepsRemaining = slewSteps;
