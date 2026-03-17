@@ -466,7 +466,6 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                          uint32_t frames,
                          const MidiEvent* midiEvents, uint32_t midiEventCount) {
 
-    float curve = getParameterValue(CONTROL_CURVE);
     const float normalizedCutoff = getParameterValue(CONTROL_FILT_CUTOFF) / (float)MAX_FILTER_CUTOFF;
     // get the left and right audio outputs
     float* const outL = outputs[0];
@@ -498,7 +497,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
             for (uint32_t j = offset; j <= midiEvents[i].frame; j++) {
                 if (getParameterValue(CONTROL_USE_RMS)) {
                     const float rms = ef->update(inputs[0][j]);
-                    currPressure = getCurve(rms, 1.f, curve, false);
+                    currPressure = getCurve(rms, 1.f, getParameterValue(CONTROL_CURVE), false);
                     currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
                     filterL->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
                     filterR->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
@@ -541,17 +540,11 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     for (uint32_t j = offset; j < frames; j++) {
         if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
             const float rms = ef->update(inputs[0][j]);
-            currPressure = getCurve(rms, 1.f, curve, false);
+            currPressure = getCurve(rms, 1.f, getParameterValue(CONTROL_CURVE), false);
             currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
             filterL->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
             filterR->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
-            MidiEvent out_pressure;
-            out_pressure.frame = j;
-            out_pressure.size = 3;
-            out_pressure.data[0] = 0xB0; // CC
-            out_pressure.data[1] = pressureCC; // CC Num
-            out_pressure.data[2] = (uint8_t)(currPressure * 127.f);
-            writeMidiEvent(out_pressure);
+            writeMidiEvent(packEvent(0xB0, pressureCC, (uint8_t)(currPressure * 127.f), j));
         }
         const StereoPair outputs = sumOscillators();
         outL[j] = outputs.sqr_l;
