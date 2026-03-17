@@ -98,9 +98,10 @@ This software was created by *Nils Brederlow*.
 This project is built using the DISTRHO Plugin Framework ([DPF]) and set up
 with the [cookiecutter-dpf-effect] project template.  
 The oscillator code is originally by Emilie Gillet [MutableInstruments]  
-It uses the [AUBIO]/[FFTW3] libraries for pitchtracking.  
+It uses the [AUBIO]/[FFTW3] libraries for pitchtracking as used by [AUDIO-TO-CV-PITCH] by Bram Giesen and falkTX
 The filter code stems from [MoogLadders]  
 
+[AUDIO-TO-CV-PITCH]: https://github.com/falkTX/audio-to-cv-pitch-lv2
 [cookiecutter-dpf-effect]: https://github.com/SpotlightKid/cookiecutter-dpf-effect
 [DPF]: https://github.com/DISTRHO/DPF
 [LV2]: http://lv2plug.in/
