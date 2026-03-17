@@ -172,6 +172,7 @@ private:
     };
     StereoPair sumOscillators();
     float waveshaper(float sample) {
+        sample *= getParameterValue(CONTROL_GAIN);
         return 2/(1+exp(-2*sample))-1;
     }
     struct Arpeggiator {

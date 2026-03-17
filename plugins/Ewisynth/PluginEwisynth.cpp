@@ -577,7 +577,6 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
   uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
   float delta = 0.f;
   float phase_ = getParameterValue(CONTROL_PHASE);
-  float gain_ = getParameterValue(CONTROL_GAIN);
   float level_ = getParameterValue(CONTROL_LEVEL);
   
   if (phase_ != lastPhase) {
@@ -605,9 +604,9 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
           SQRosc[j+1].SetPW(currPulseWidth);
         }
         out.sqr_l +=
-            SQRosc[j+1].Process() / voicingSize * gain_ * currPressure;
+            SQRosc[j+1].Process() / voicingSize * currPressure;
         out.saw_r +=
-            SAWosc[j+1].Process() / voicingSize * gain_ * currPressure;
+            SAWosc[j+1].Process() / voicingSize * currPressure;
       }
     } else {
       freq = polyfotz.getFrequency(i) * pitchFactor();
@@ -624,9 +623,9 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
       SQRosc[i].SetPW(currPulseWidth);
     }
     out.sqr_l +=
-        SQRosc[i].Process() / poly_ * gain_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
+        SQRosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
     out.saw_r +=
-        SAWosc[i].Process() / poly_ * gain_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
+        SAWosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
   }
   out.sqr_l = waveshaper(out.sqr_l) * level_;
   out.saw_r = waveshaper(out.saw_r) * level_;
