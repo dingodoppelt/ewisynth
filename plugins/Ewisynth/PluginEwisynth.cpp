@@ -110,13 +110,23 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_GAIN:
-            parameter.name = "Gain";
-            parameter.shortName = "Gain";
-            parameter.symbol = "gain";
+            parameter.name = "Drive Gain";
+            parameter.shortName = "DriveGain";
+            parameter.symbol = "driveGain";
             parameter.ranges.def = 7.f;
             parameter.ranges.min = 0.f;
             parameter.ranges.max = 8.f;
             parameter.unit = "db";
+            parameter.hints = kParameterIsAutomatable;
+            break;
+        case CONTROL_VOL_LEAD:
+            parameter.name = "Lead Volume";
+            parameter.shortName = "LeadVol";
+            parameter.symbol = "leadVolume";
+            parameter.ranges.def = 1.f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.f;
+            parameter.unit = "%";
             parameter.hints = kParameterIsAutomatable;
             break;
         case CONTROL_LEVEL:
@@ -614,9 +624,9 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
       SQRosc[i].SetPW(currPulseWidth);
     }
     out.sqr_l +=
-        SQRosc[i].Process() / poly_ * gain_ * currPressure;
+        SQRosc[i].Process() / poly_ * gain_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
     out.saw_r +=
-        SAWosc[i].Process() / poly_ * gain_ * currPressure;
+        SAWosc[i].Process() / poly_ * gain_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
   }
   out.sqr_l = waveshaper(out.sqr_l) * level_;
   out.saw_r = waveshaper(out.saw_r) * level_;

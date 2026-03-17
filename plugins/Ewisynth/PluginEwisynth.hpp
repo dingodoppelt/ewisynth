@@ -47,6 +47,7 @@ public:
         CONTROL_OCTAVE,
         CONTROL_TRANSPOSE,
         CONTROL_GAIN,
+        CONTROL_VOL_LEAD,
         CONTROL_LEVEL,
         CONTROL_SHAPE,
         CONTROL_PHASE,
