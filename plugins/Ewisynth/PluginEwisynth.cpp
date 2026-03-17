@@ -520,6 +520,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                 const StereoPair outputs = sumOscillators();
                 outL[j] = outputs.sqr_l;
                 outR[j] = outputs.saw_r;
+                // TODO: send harmony and arpeggiator notes over MIDI out
                 // if (arpeggiator.trigger) {
                 //     MidiEvent note_on;
                 //     note_on.frame = offset + j;
