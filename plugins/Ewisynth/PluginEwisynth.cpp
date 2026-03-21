@@ -573,65 +573,57 @@ Plugin* createPlugin() {
 // -----------------------------------------------------------------------
 
 PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
-  StereoPair out;
-  uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
-  float delta = 0.f;
-  float phase_ = getParameterValue(CONTROL_PHASE);
-  float level_ = getParameterValue(CONTROL_LEVEL);
-  
-  if (phase_ != lastPhase) {
-    delta = lastPhase - phase_;
-    lastPhase = phase_;
-  };
-
-  int voicingSize = polyfotz.getActiveVoicingSize();
-  realFrequency = polyfotz.getFrequency(0) * pitchFactor();
-  for (int i = 0; i < poly_; i++) {
-    float freq;
-    arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
-    if (arpeggiator.isActive) {
-      freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
-      for (int j = 0; j < voicingSize; j++) {
-        SAWosc[j+1].SetFreq(polyfotz.getFrequency(j));
-        SQRosc[j+1].SetFreq(polyfotz.getFrequency(j));
-        SAWosc[j+1].SetPW(currPulseWidth);
-        if (delta != 0.f) SQRosc[j+1].OffsetPhase(delta);
-        if (currShape == 1.f) {
-          SQRosc[j+1].SetWaveshape( 1.5f - currPulseWidth );
-          SQRosc[j+1].SetPW(.5f);
+    StereoPair out;
+    uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
+    float delta = 0.f;
+    float phase_ = getParameterValue(CONTROL_PHASE);
+    float level_ = getParameterValue(CONTROL_LEVEL);
+    
+    if (phase_ != lastPhase) {
+        delta = lastPhase - phase_;
+        lastPhase = phase_;
+    };
+    
+    int voicingSize = polyfotz.getActiveVoicingSize();
+    realFrequency = polyfotz.getFrequency(0) * pitchFactor();
+    for (int i = 0; i < poly_; i++) {
+        float freq;
+        arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
+        if (arpeggiator.isActive) {
+            freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
+            for (int j = 0; j < voicingSize; j++) {
+                SAWosc[j+1].SetFreq(polyfotz.getFrequency(j));
+                SQRosc[j+1].SetFreq(polyfotz.getFrequency(j));
+                SQRosc[j+1].SetWaveshape(currShape);
+                SAWosc[j+1].SetWaveshape(currShape);
+                SAWosc[j+1].SetPW(currPulseWidth);
+                SQRosc[j+1].SetPW(currPulseWidth);
+                if (delta != 0.f) SQRosc[j+1].OffsetPhase(delta);
+                out.sqr_l +=
+                SQRosc[j+1].Process() / voicingSize * currPressure;
+                out.saw_r +=
+                SAWosc[j+1].Process() / voicingSize * currPressure;
+            }
         } else {
-          SQRosc[j+1].SetWaveshape(currShape);
-          SQRosc[j+1].SetPW(currPulseWidth);
+            freq = polyfotz.getFrequency(i) * pitchFactor();
         }
+        SAWosc[i].SetFreq(freq);
+        SQRosc[i].SetFreq(freq);
+        SQRosc[i].SetWaveshape(currShape);
+        SAWosc[i].SetWaveshape(currShape);
+        SAWosc[i].SetPW(currPulseWidth);
+        SQRosc[i].SetPW(currPulseWidth);
+        if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
         out.sqr_l +=
-            SQRosc[j+1].Process() / voicingSize * currPressure;
-        out.saw_r +=
-            SAWosc[j+1].Process() / voicingSize * currPressure;
-      }
-    } else {
-      freq = polyfotz.getFrequency(i) * pitchFactor();
-    }
-    SAWosc[i].SetFreq(freq);
-    SQRosc[i].SetFreq(freq);
-    SAWosc[i].SetPW(currPulseWidth);
-    if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
-    if (currShape == 1.f) {
-      SQRosc[i].SetWaveshape( 1.5f - currPulseWidth );
-      SQRosc[i].SetPW(.5f);
-    } else {
-      SQRosc[i].SetWaveshape(currShape);
-      SQRosc[i].SetPW(currPulseWidth);
-    }
-    out.sqr_l +=
         SQRosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
-    out.saw_r +=
+        out.saw_r +=
         SAWosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
-  }
-  out.sqr_l = waveshaper(out.sqr_l) * level_;
-  out.saw_r = waveshaper(out.saw_r) * level_;
-  (slewStepsRemaining > 0) ? slewStepsRemaining-- : currFrequency = targetFrequency;
-  arpeggiator.advance();
-  return out;
+    }
+    out.sqr_l = waveshaper(out.sqr_l) * level_;
+    out.saw_r = waveshaper(out.saw_r) * level_;
+    (slewStepsRemaining > 0) ? slewStepsRemaining-- : currFrequency = targetFrequency;
+    arpeggiator.advance();
+    return out;
 }
 
 END_NAMESPACE_DISTRHO
