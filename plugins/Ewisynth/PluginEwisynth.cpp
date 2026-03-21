@@ -145,7 +145,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.symbol = "slewtime";
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
-            parameter.ranges.max = 6000;
+            parameter.ranges.max = 48000;
             parameter.unit = "frames";
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
@@ -602,10 +602,10 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
         float freq;
         arpeggiator.isActive = poly_ == 1 && polyfotz.isPitchbendNegative();
         if (arpeggiator.isActive) {
-            freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
+            freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize)) * pitchFactor();
             for (int j = 0; j < voicingSize; j++) {
-                SAWosc[j+1].SetFreq(polyfotz.getFrequency(j));
-                SQRosc[j+1].SetFreq(polyfotz.getFrequency(j));
+                SAWosc[j+1].SetFreq(polyfotz.getFrequency(j) * pitchFactor());
+                SQRosc[j+1].SetFreq(polyfotz.getFrequency(j) * pitchFactor());
                 SQRosc[j+1].SetWaveshape(currShape);
                 SAWosc[j+1].SetWaveshape(currShape);
                 SAWosc[j+1].SetPW(currPulseWidth);
