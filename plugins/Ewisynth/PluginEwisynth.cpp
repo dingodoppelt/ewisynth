@@ -519,7 +519,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                 if (getParameterValue(CONTROL_USE_RMS)) {
                     const float rms = ef->update(inputs[0][j]);
                     currPressure = getCurve(rms, 1.f, getParameterValue(CONTROL_CURVE), false);
-                    currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+                    currPulseWidth = getCurve(rms, 1.f, getParameterValue(CONTROL_PW_CURVE), false) / 2.f + .5f; // limit pulse width to .5 - 1.
                     filterL->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
                     filterR->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
                 }
