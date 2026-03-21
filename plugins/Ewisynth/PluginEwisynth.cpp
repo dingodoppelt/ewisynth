@@ -406,7 +406,7 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             polyfotz.setPolyphony((uint8_t)value);
             break;
         case CONTROL_SLEWTIME:
-            slewSteps = (uint8_t)value;
+            slewSteps = value;
             break;
         case CONTROL_PRESS_CC:
             pressureCC = (uint8_t)value;
