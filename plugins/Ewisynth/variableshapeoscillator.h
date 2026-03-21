@@ -141,7 +141,7 @@ private:
                              float square_amount)
     {
         float saw    = phase;
-        float square = phase < pw ? 0.0f : 1.0f;
+        float square = phase < pw && phase < .96f ? 0.0f : 1.0f;
         float triangle
         = phase < pw ? phase * slope_up : 1.0f - (phase - pw) * slope_down;
         saw += (square - saw) * square_amount;

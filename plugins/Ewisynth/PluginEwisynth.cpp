@@ -334,6 +334,14 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0.f;
             parameter.ranges.max = 1.f;
             break;
+        case CONTROL_PW_CURVE:
+            parameter.hints = kParameterIsAutomatable;
+            parameter.name = "Pulsewidth Sens";
+            parameter.symbol = "pulseSens";
+            parameter.ranges.def = 0.5f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.f;
+            break;
     }
 }
 
@@ -425,12 +433,15 @@ void PluginEwisynth::setParameterValue(uint32_t index, float value) {
             }
             break;
         case CONTROL_CURVE:
+            // fall through to next case so take the correct value
+            [[fallthrough]];
+        case CONTROL_PW_CURVE:
             value = getParameterValue(CONTROL_PRESSURE);
             // fall through to next case so take the correct value
             [[fallthrough]];
         case CONTROL_PRESSURE:
             currPressure = getCurve(value, 127.f, getParameterValue(CONTROL_CURVE), false);
-            currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+            currPulseWidth = getCurve(value, 127.f, getParameterValue(CONTROL_PW_CURVE), false) / 2.f + .5f; // limit pulse width to .5 - 1.
             break;
         case CONTROL_RMS_LEN:
             if (ef != nullptr) ef->init((uint16_t)value);
@@ -551,7 +562,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
         if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
             const float rms = ef->update(inputs[0][j]);
             currPressure = getCurve(rms, 1.f, getParameterValue(CONTROL_CURVE), false);
-            currPulseWidth = currPressure / 2.f + .5f; // limit pulse width to .5 - 1.
+            currPulseWidth = getCurve(rms, 1.f, getParameterValue(CONTROL_PW_CURVE), false) / 2.f + .5f; // limit pulse width to .5 - 1.
             filterL->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
             filterR->SetCutoff((getCurve(rms, 1.f - normalizedCutoff, getParameterValue(CONTROL_FILT_CURVE), true) + normalizedCutoff) * (float)MAX_FILTER_CUTOFF);
             writeMidiEvent(packEvent(0xB0, pressureCC, (uint8_t)(currPressure * 127.f), j));
@@ -574,10 +585,11 @@ Plugin* createPlugin() {
 
 PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
     StereoPair out;
-    uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
     float delta = 0.f;
     float phase_ = getParameterValue(CONTROL_PHASE);
     float level_ = getParameterValue(CONTROL_LEVEL);
+    float lead_lvl_ = getParameterValue(CONTROL_VOL_LEAD);
+    uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
     
     if (phase_ != lastPhase) {
         delta = lastPhase - phase_;
@@ -588,7 +600,7 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
     realFrequency = polyfotz.getFrequency(0) * pitchFactor();
     for (int i = 0; i < poly_; i++) {
         float freq;
-        arpeggiator.isActive = (uint8_t)getParameterValue(CONTROL_POLYPHONY) == 1 && polyfotz.isPitchbendNegative();
+        arpeggiator.isActive = poly_ == 1 && polyfotz.isPitchbendNegative();
         if (arpeggiator.isActive) {
             freq = polyfotz.getFrequency(arpeggiator.getIndex(voicingSize)) * pow(2, -arpeggiator.getOctave(voicingSize));
             for (int j = 0; j < voicingSize; j++) {
@@ -599,10 +611,8 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
                 SAWosc[j+1].SetPW(currPulseWidth);
                 SQRosc[j+1].SetPW(currPulseWidth);
                 if (delta != 0.f) SQRosc[j+1].OffsetPhase(delta);
-                out.sqr_l +=
-                SQRosc[j+1].Process() / voicingSize * currPressure;
-                out.saw_r +=
-                SAWosc[j+1].Process() / voicingSize * currPressure;
+                out.sqr_l += SQRosc[j+1].Process() / voicingSize * currPressure;
+                out.saw_r += SAWosc[j+1].Process() / voicingSize * currPressure;
             }
         } else {
             freq = polyfotz.getFrequency(i) * pitchFactor();
@@ -614,10 +624,8 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
         SAWosc[i].SetPW(currPulseWidth);
         SQRosc[i].SetPW(currPulseWidth);
         if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
-        out.sqr_l +=
-        SQRosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
-        out.saw_r +=
-        SAWosc[i].Process() / poly_ * currPressure * getParameterValue(CONTROL_VOL_LEAD);
+        out.sqr_l += SQRosc[i].Process() / poly_ * currPressure * lead_lvl_;
+        out.saw_r += SAWosc[i].Process() / poly_ * currPressure * lead_lvl_;
     }
     out.sqr_l = waveshaper(out.sqr_l) * level_;
     out.saw_r = waveshaper(out.saw_r) * level_;
