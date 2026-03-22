@@ -567,7 +567,7 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
     // envelope follower
 
     for (uint32_t j = offset; j < frames; j++) {
-        if ((bool)getParameterValue(CONTROL_USE_RMS) && (bool)getParameterValue(CONTROL_USEAUDIO)) {
+        if ((bool)getParameterValue(CONTROL_USE_RMS)) {
             const float rms = ef->update(inputs[0][j]);
             currPressure = getCurve(rms, 1.f, getParameterValue(CONTROL_CURVE), false);
             currPulseWidth = getCurve(rms, 1.f, getParameterValue(CONTROL_PW_CURVE), false) / 2.f + .5f; // limit pulse width to .5 - 1.
