@@ -342,6 +342,14 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.ranges.min = 0.f;
             parameter.ranges.max = 1.f;
             break;
+        case CONTROL_POLY_PW_SCALE:
+            parameter.hints = kParameterIsAutomatable;
+            parameter.name = "Poly Pulsewidth Scale";
+            parameter.symbol = "polyPWScale";
+            parameter.ranges.def = 0.f;
+            parameter.ranges.min = 0.f;
+            parameter.ranges.max = 1.f;
+            break;
     }
 }
 
@@ -590,6 +598,7 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
     float level_ = getParameterValue(CONTROL_LEVEL);
     float lead_lvl_ = getParameterValue(CONTROL_VOL_LEAD);
     uint8_t poly_ = (uint8_t)getParameterValue(CONTROL_POLYPHONY);
+    float polyPWScale_ = -getParameterValue(CONTROL_POLY_PW_SCALE) / poly_;
     
     if (phase_ != lastPhase) {
         delta = lastPhase - phase_;
@@ -621,8 +630,8 @@ PluginEwisynth::StereoPair PluginEwisynth::sumOscillators() {
         SQRosc[i].SetFreq(freq);
         SQRosc[i].SetWaveshape(currShape);
         SAWosc[i].SetWaveshape(currShape);
-        SAWosc[i].SetPW(currPulseWidth);
-        SQRosc[i].SetPW(currPulseWidth);
+        SAWosc[i].SetPW(((polyPWScale_ * i + 1.f) * currPulseWidth) / 2.f + .5f);
+        SQRosc[i].SetPW(((polyPWScale_ * i + 1.f) * currPulseWidth)  / 2.f + .5f);
         if (delta != 0.f) SQRosc[i].OffsetPhase(delta);
         out.sqr_l += SQRosc[i].Process() / poly_ * currPressure * lead_lvl_;
         out.saw_r += SAWosc[i].Process() / poly_ * currPressure * lead_lvl_;
