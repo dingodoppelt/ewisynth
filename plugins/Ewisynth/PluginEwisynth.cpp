@@ -535,16 +535,6 @@ void PluginEwisynth::run(const float** inputs, float** outputs,
                 outL[j] = outputs.sqr_l;
                 outR[j] = outputs.saw_r;
                 // TODO: send harmony and arpeggiator notes over MIDI out
-                // if (arpeggiator.trigger) {
-                //     MidiEvent note_on;
-                //     note_on.frame = offset + j;
-                //     note_on.size = 3;
-                //     note_on.data[0] = 0x90;
-                //     note_on.data[1] = polyfotz.getNote();
-                //     note_on.data[2] = (uint8_t)(currPressure * 127.f);
-                //     writeMidiEvent(note_on);
-                //     arpeggiator.trigger = false;
-                // }
                 offset++;
             }
             // MIDI in
