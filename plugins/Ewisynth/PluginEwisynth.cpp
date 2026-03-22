@@ -145,7 +145,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.symbol = "slewtime";
             parameter.ranges.def = 0;
             parameter.ranges.min = 0;
-            parameter.ranges.max = 48000;
+            parameter.ranges.max = 8000;
             parameter.unit = "frames";
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
