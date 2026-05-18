@@ -21,6 +21,12 @@ else
 endif
 endif
 
+# --- MAC-OS FIX FÜR AUBIO / FFTW ---
+ifeq ($(MACOS),true)
+export USER_LDFLAGS += -framework Accelerate
+endif
+# -----------------------------------
+
 # --------------------------------------------------------------
 # Installation directories
 
@@ -84,7 +90,7 @@ submodules:
 	git submodule update --init --recursive
 
 libs:
-	$(MAKE) -C aubio
+	WAFOPTS="--notests --disable-docs" $(MAKE) -C aubio
 
 plugins: libs
 	$(MAKE) all -C plugins/Ewisynth
