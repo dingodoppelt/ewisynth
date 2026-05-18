@@ -193,7 +193,7 @@ void PluginEwisynth::initParameter(uint32_t index, Parameter& parameter) {
             parameter.symbol = "bank";
             parameter.ranges.def = 2;
             parameter.ranges.min = 0;
-            parameter.ranges.max = 6;
+            parameter.ranges.max = 7;
             parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
             break;
         case CONTROL_VOICING:
