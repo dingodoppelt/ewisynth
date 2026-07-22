@@ -3,182 +3,205 @@
 #include <math.h>
 #include <cstdint>
 #include <vector>
-class PolyFotz {
+class PolyFotz
+{
 private:
-    float pitchbend = 1.f;
-    float normalizedPitchbend = 0.f;
-    float detune = 0.f;
-    uint8_t maxPolyphony = 16;
-    uint8_t polyphony = 1;
-    struct MasterNote {
-        float tune = 1.f;
-        bool useMidi = true;
-        float frequency = 440.f;
-        uint8_t note = 69;
-        uint8_t lastNote = 69;
-        int8_t semitones = 0;
-        int8_t octaves = 0;
-        uint8_t freqToNote(float f) { return (uint8_t)((12.f * log2(f / 440.f * tune)) + 69); }
+    float   pitchbend           = 1.f;
+    float   normalizedPitchbend = 0.f;
+    float   detune              = 0.f;
+    uint8_t maxPolyphony        = 16;
+    uint8_t polyphony           = 1;
+    struct MasterNote
+    {
+        float   tune      = 1.f;
+        bool    useMidi   = true;
+        float   frequency = 440.f;
+        uint8_t note      = 69;
+        uint8_t lastNote  = 69;
+        int8_t  semitones = 0;
+        int8_t  octaves   = 0;
+        uint8_t freqToNote ( float f ) { return (uint8_t) ( ( 12.f * log2 ( f / 440.f * tune ) ) + 69 ); }
         uint8_t getEffectiveNote() { return note + semitones + octaves; }
-        float   noteToFreq() { return (useMidi) ?  powf(2.f, (getEffectiveNote() - 69.f) / 12.f) * 440.f : frequency; }
+        float   noteToFreq() { return ( useMidi ) ? powf ( 2.f, ( getEffectiveNote() - 69.f ) / 12.f ) * 440.f : frequency; }
     } masterNote;
-    uint8_t mode = 0;
-    uint8_t activeVoicing = 0;
-    uint8_t activeBank = 0;
-    float detuneTable[16] = {1};
-    float getMasterFrequency() {
-        const float mf = (masterNote.useMidi) ? masterNote.noteToFreq() * masterNote.tune: masterNote.frequency * pow(2.f, (masterNote.octaves + masterNote.semitones) / 12.f);
+    uint8_t mode            = 0;
+    uint8_t activeVoicing   = 0;
+    uint8_t activeBank      = 0;
+    float   detuneTable[16] = { 1 };
+    float   getMasterFrequency()
+    {
+        const float mf = ( masterNote.useMidi ) ? masterNote.noteToFreq() * masterNote.tune
+                                                : masterNote.frequency * pow ( 2.f, ( masterNote.octaves + masterNote.semitones ) / 12.f );
         return mf;
     }
-    void updateDetune() {
-        for (int i = 0; i < polyphony; i++) {
-            detuneTable[i] = pow(2., ((i * detune) / (polyphony << 6)) * cos(M_PI * i));
+    void updateDetune()
+    {
+        for ( int i = 0; i < polyphony; i++ )
+        {
+            detuneTable[i] = pow ( 2., ( ( i * detune ) / ( polyphony << 6 ) ) * cos ( M_PI * i ) );
         }
     }
+
 public:
-    void setNote (uint8_t n) {
-        masterNote.note = (n < 128) ? n : 69;
+    void setNote ( uint8_t n )
+    {
+        masterNote.note    = ( n < 128 ) ? n : 69;
         masterNote.useMidi = true;
         updateRotator();
     }
-    bool setFrequency (float f) {
+    bool setFrequency ( float f )
+    {
         masterNote.frequency = f;
-        masterNote.lastNote = masterNote.note;
-        masterNote.note = masterNote.freqToNote(f);
-        masterNote.useMidi = false;
-        bool isNewNote = (masterNote.note != masterNote.lastNote);
-        if (isNewNote) updateRotator();
+        masterNote.lastNote  = masterNote.note;
+        masterNote.note      = masterNote.freqToNote ( f );
+        masterNote.useMidi   = false;
+        bool isNewNote       = ( masterNote.note != masterNote.lastNote );
+        if ( isNewNote )
+            updateRotator();
         return isNewNote;
     }
-    void setTranspose(int8_t t) { masterNote.semitones = t; }
-    void setOctave(int8_t o) { masterNote.octaves = o * 12; }
-    void setPitchbend(uint16_t b) { normalizedPitchbend = ((double)b - 8192.) / 8192.; pitchbend = pow(2., ((double)b - 8192.) / 49152.); }
-    void setTune(float t) { masterNote.tune = pow(2.0, t); }
-    void setBank(uint8_t b) {
-        if (activeBank != b) {
+    void setTranspose ( int8_t t ) { masterNote.semitones = t; }
+    void setOctave ( int8_t o ) { masterNote.octaves = o * 12; }
+    void setPitchbend ( uint16_t b )
+    {
+        normalizedPitchbend = ( (double) b - 8192. ) / 8192.;
+        pitchbend           = pow ( 2., ( (double) b - 8192. ) / 49152. );
+    }
+    void setTune ( float t ) { masterNote.tune = pow ( 2.0, t ); }
+    void setBank ( uint8_t b )
+    {
+        if ( activeBank != b )
+        {
             b %= banks.size();
             activeVoicing = activeVoicing % banks[b].size();
-            activeBank = b;
+            activeBank    = b;
         }
     }
-    void setVoicing(uint8_t v) { if (mode == 0 && activeVoicing != v) activeVoicing = v % banks[activeBank].size(); }
-    void setRotator(uint8_t r) { if (mode != r) mode = (r > 2) ? 0 : r; }
-    void setDetune(float d) {
-        if (detune != d) {
+    void setVoicing ( uint8_t v )
+    {
+        if ( mode == 0 && activeVoicing != v )
+            activeVoicing = v % banks[activeBank].size();
+    }
+    void setRotator ( uint8_t r )
+    {
+        if ( mode != r )
+            mode = ( r > 2 ) ? 0 : r;
+    }
+    void setDetune ( float d )
+    {
+        if ( detune != d )
+        {
             detune = d;
             updateDetune();
         }
     }
-    void setPolyphony(uint8_t p) {
-        if (polyphony != p) {
+    void setPolyphony ( uint8_t p )
+    {
+        if ( polyphony != p )
+        {
             polyphony = p;
             updateDetune();
         }
     }
-    float getFrequency(uint8_t voice) {
+    float getFrequency ( uint8_t voice )
+    {
         float modulation = 1.f;
-        if (isPitchbendNegative()) {
-            if (voice < banks[activeBank][activeVoicing].size()) {
-                modulation = pow(2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12.);
-            } else {
+        if ( isPitchbendNegative() )
+        {
+            if ( voice < banks[activeBank][activeVoicing].size() )
+            {
+                modulation =
+                    pow ( 2., -normalizedPitchbend * banks[activeBank][activeVoicing][voice % banks[activeBank][activeVoicing].size()] / 12. );
+            }
+            else
+            {
                 modulation = detuneTable[voice];
             }
-        } else {
+        }
+        else
+        {
             modulation = detuneTable[voice] * pitchbend;
         }
         return getMasterFrequency() * modulation;
     }
-    uint8_t getNote() {
-        return masterNote.note;
-    }
-    uint8_t getLastNote() {
-        return masterNote.lastNote;
-    }
-    void updateRotator() {
-        switch (mode) {
-            case 1:
-                activeVoicing = (1 + activeVoicing) % banks[activeBank].size();
-                break;
-            case 2:
-                activeVoicing = rand() % banks[activeBank].size();
-                break;
-            default:
-                break;
+    uint8_t getNote() { return masterNote.note; }
+    uint8_t getLastNote() { return masterNote.lastNote; }
+    void    updateRotator()
+    {
+        switch ( mode )
+        {
+        case 1:
+            activeVoicing = ( 1 + activeVoicing ) % banks[activeBank].size();
+            break;
+        case 2:
+            activeVoicing = rand() % banks[activeBank].size();
+            break;
+        default:
+            break;
         }
     }
-    void Init(uint8_t maxPoly) { maxPolyphony = maxPoly; updateDetune(); }
+    void Init ( uint8_t maxPoly )
+    {
+        maxPolyphony = maxPoly;
+        updateDetune();
+    }
     uint8_t getActiveVoicingSize() { return banks[activeBank][activeVoicing].size(); }
-    bool isPitchbendNegative() { return (pitchbend < 1.f); }
+    bool    isPitchbendNegative() { return ( pitchbend < 1.f ); }
+
 private:
     const std::vector<std::vector<std::vector<int8_t>>> banks = {
-        {
-            {0, -7, -8, -14, -38}, // nb wide
-            {0, -7, -8, -17, -39},
-            {0, -7, -11, -18, -40},
-            {0, -7, -9, -14, -38},
-            {0, -7, -9, -17, -39},
-            {0, -7, -10, -17, -39}
-        },
+        { { 0, -7, -8, -14, -38 }, // nb wide
+          { 0, -7, -8, -17, -39 },
+          { 0, -7, -11, -18, -40 },
+          { 0, -7, -9, -14, -38 },
+          { 0, -7, -9, -17, -39 },
+          { 0, -7, -10, -17, -39 } },
 
-        {
-            {0, -7, -11, -18}, // blake
-            {0, -7, -8, -15},
-            {0, -5, -16, -23},
-            {0, -5, -12, -20},
-            {0, -7, -16, -23},
-            {0, -7, -10, -29},
-            {0, -7, -11, -18},
-            {0, -5, -12, -20}
-        },
+        { { 0, -7, -11, -18 }, // blake
+          { 0, -7, -8, -15 },
+          { 0, -5, -16, -23 },
+          { 0, -5, -12, -20 },
+          { 0, -7, -16, -23 },
+          { 0, -7, -10, -29 },
+          { 0, -7, -11, -18 },
+          { 0, -5, -12, -20 } },
 
-        {
-            {0, -7, -8, -14}, // nb
-            {0, -7, -8, -17},
-            {0, -7, -11, -18},
-            {0, -7, -9, -14},
-            {0, -7, -9, -17},
-            {0, -7, -10, -17}
-        },
+        { { 0, -7, -8, -14 }, // nb
+          { 0, -7, -8, -17 },
+          { 0, -7, -11, -18 },
+          { 0, -7, -9, -14 },
+          { 0, -7, -9, -17 },
+          { 0, -7, -10, -17 } },
 
-        {
-            {0, 7, -10}, // brecker
-            {0, 7, -7},
-            {0, 7, -8},
-            {0, 7, -2}
-        },
+        { { 0, 7, -10 }, // brecker
+          { 0, 7, -7 },
+          { 0, 7, -8 },
+          { 0, 7, -2 } },
 
-        {
-            {0, -5, -7, -8, -15}, // ferrante
-            {0, -5, -7, -9, -16}
-        },
+        { { 0, -5, -7, -8, -15 }, // ferrante
+          { 0, -5, -7, -9, -16 } },
 
-        {
-            {0, -5, -10, -12}, // generic
-            {0, -5, -10, -20},
-            {0, -3, -8, -19},
-            {0, -3, -7, -10},
-            {0, -4, -9, -11},
-            {0, -3, -8, -11},
-            {0, -5, -7, -11},
-            {0, -5, -11, -15},
-            {0, -3, -6, -9},
-            {0, -4, -8, -12}
-        },
+        { { 0, -5, -10, -12 }, // generic
+          { 0, -5, -10, -20 },
+          { 0, -3, -8, -19 },
+          { 0, -3, -7, -10 },
+          { 0, -4, -9, -11 },
+          { 0, -3, -8, -11 },
+          { 0, -5, -7, -11 },
+          { 0, -5, -11, -15 },
+          { 0, -3, -6, -9 },
+          { 0, -4, -8, -12 } },
 
-        {
-            {0, -7, -14}, // bass
-            {0, -7, -15},
-            {0, -7, -16},
-            {0, -8, -15},
-            {0, -8, -17},
-            {0, -9, -16},
-            {0, -9, -17}
-        },
+        { { 0, -7, -14 }, // bass
+          { 0, -7, -15 },
+          { 0, -7, -16 },
+          { 0, -8, -15 },
+          { 0, -8, -17 },
+          { 0, -9, -16 },
+          { 0, -9, -17 } },
 
-        {
-            {0, -3, -7, -8, -12}, // brecker2
-            {0, -3, -7, -12, -18},
-            {0, -3, -7, -12, -14}
-        },
+        { { 0, -3, -7, -8, -12 }, // brecker2
+          { 0, -3, -7, -12, -18 },
+          { 0, -3, -7, -12, -14 } },
     };
 };

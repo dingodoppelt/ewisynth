@@ -10,39 +10,41 @@
 #define PLUGIN_EWISYNTH_H
 
 #include "DistrhoPlugin.hpp"
-#include "polyfotz.h"
-#include "variableshapeoscillator.h"
-#include "pitchtracker.h"
-#include "rms.h"
 #include "MicrotrackerModel.h"
+#include "pitchtracker.h"
+#include "polyfotz.h"
+#include "rms.h"
+#include "variableshapeoscillator.h"
 #include <cstdint>
 
-#define MAX_POLYPHONY 16
+#define MAX_POLYPHONY     16
 #define MAX_FILTER_CUTOFF 8000
 
 START_NAMESPACE_DISTRHO
 
 #ifndef MIN
-#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+#    define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #endif
 
 #ifndef MAX
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
+#    define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #endif
 
 #ifndef CLAMP
-#define CLAMP(v, min, max) (MIN((max), MAX((min), (v))))
+#    define CLAMP( v, min, max ) ( MIN ( ( max ), MAX ( ( min ), ( v ) ) ) )
 #endif
 
 #ifndef DB_CO
-#define DB_CO(g) ((g) > -90.0f ? powf(10.0f, (g) * 0.05f) : 0.0f)
+#    define DB_CO( g ) ( ( g ) > -90.0f ? powf ( 10.0f, ( g ) * 0.05f ) : 0.0f )
 #endif
 
 // -----------------------------------------------------------------------
 
-class PluginEwisynth : public Plugin {
+class PluginEwisynth : public Plugin
+{
 public:
-    enum Parameters {
+    enum Parameters
+    {
         CONTROL_TUNE = 0,
         CONTROL_OCTAVE,
         CONTROL_TRANSPOSE,
@@ -84,170 +86,168 @@ protected:
     // -------------------------------------------------------------------
     // Information
 
-    const char* getLabel() const noexcept override {
-        return "Ewisynth";
-    }
+    const char* getLabel() const noexcept override { return "Ewisynth"; }
 
-    const char* getDescription() const override {
-        return "simple synth for breath controllers";
-    }
+    const char* getDescription() const override { return "simple synth for breath controllers"; }
 
-    const char* getMaker() const noexcept override {
-        return "NB";
-    }
+    const char* getMaker() const noexcept override { return "NB"; }
 
-    const char* getHomePage() const override {
-        return "https://jazz-polizei.de/plugins/ewisynth";
-    }
+    const char* getHomePage() const override { return "https://jazz-polizei.de/plugins/ewisynth"; }
 
-    const char* getLicense() const noexcept override {
-        return "https://spdx.org/licenses/GPLv3";
-    }
+    const char* getLicense() const noexcept override { return "https://spdx.org/licenses/GPLv3"; }
 
-    uint32_t getVersion() const noexcept override {
-        return d_version(0, 1, 0);
-    }
+    uint32_t getVersion() const noexcept override { return d_version ( 0, 1, 0 ); }
 
     // Go to:
     //
     // http://service.steinberg.de/databases/plugin.nsf/plugIn
     //
     // Get a proper plugin UID and fill it in here!
-    int64_t getUniqueId() const noexcept override {
-        return d_cconst('a', 'b', 'c', 'd');
-    }
+    int64_t getUniqueId() const noexcept override { return d_cconst ( 'a', 'b', 'c', 'd' ); }
 
     // -------------------------------------------------------------------
     // Init
 
-    void initAudioPort(bool input, uint32_t index, AudioPort& port) override;
-    void initParameter(uint32_t index, Parameter& parameter) override;
-    void initProgramName(uint32_t index, String& programName) override;
+    void initAudioPort ( bool input, uint32_t index, AudioPort& port ) override;
+    void initParameter ( uint32_t index, Parameter& parameter ) override;
+    void initProgramName ( uint32_t index, String& programName ) override;
 
     // -------------------------------------------------------------------
     // Internal data
 
-    float getParameterValue(uint32_t index) const override;
-    void setParameterValue(uint32_t index, float value) override;
-    void loadProgram(uint32_t index) override;
+    float getParameterValue ( uint32_t index ) const override;
+    void  setParameterValue ( uint32_t index, float value ) override;
+    void  loadProgram ( uint32_t index ) override;
 
     // -------------------------------------------------------------------
     // Optional
 
     // Optional callback to inform the plugin about a sample rate change.
-    void sampleRateChanged(double newSampleRate) override;
+    void sampleRateChanged ( double newSampleRate ) override;
 
     // -------------------------------------------------------------------
     // Process
 
     void activate() override;
 
-    void run(const float**, float** outputs, uint32_t frames,
-             const MidiEvent* midiEvents, uint32_t midiEventCount) override;
-
+    void run ( const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount ) override;
 
     // -------------------------------------------------------------------
 
 private:
-    float           fParams[CONTROL_NR];
-    double          fSampleRate;
+    float  fParams[CONTROL_NR];
+    double fSampleRate;
 
-    uint8_t pressureCC = 96;
-    float currFrequency = 440.f;
-    float targetFrequency = 440.f;
-    float realFrequency = 440.f;
-    float freqRatio() { return currFrequency / targetFrequency; }
-    float slewSteps = 0.f;
-    float slewStepsRemaining = 0.f;
-    float exponent() { return (slewSteps > 0) ? slewStepsRemaining / slewSteps : 1.f; }
-    float pitchFactor() { return powf(freqRatio(), exponent()); }
-    float currPulseWidth = .5f;
-    float currPressure = 0.f;
-    float currShape = 0.f;
-    float lastPhase = 0.f;
+    uint8_t                 pressureCC      = 96;
+    float                   currFrequency   = 440.f;
+    float                   targetFrequency = 440.f;
+    float                   realFrequency   = 440.f;
+    float                   freqRatio() { return currFrequency / targetFrequency; }
+    float                   slewSteps          = 0.f;
+    float                   slewStepsRemaining = 0.f;
+    float                   exponent() { return ( slewSteps > 0 ) ? slewStepsRemaining / slewSteps : 1.f; }
+    float                   pitchFactor() { return powf ( freqRatio(), exponent() ); }
+    float                   currPulseWidth = .5f;
+    float                   currPressure   = 0.f;
+    float                   currShape      = 0.f;
+    float                   lastPhase      = 0.f;
     VariableShapeOscillator SAWosc[MAX_POLYPHONY];
     VariableShapeOscillator SQRosc[MAX_POLYPHONY];
-    PolyFotz polyfotz;
-    struct StereoPair {
+    PolyFotz                polyfotz;
+    struct StereoPair
+    {
         float sqr_l = 0.f;
         float saw_r = 0.f;
     };
     StereoPair sumOscillators();
-    float waveshaper(float sample) {
-        sample *= getParameterValue(CONTROL_GAIN);
-        return 2/(1+exp(-2*sample))-1;
+    float      waveshaper ( float sample )
+    {
+        sample *= getParameterValue ( CONTROL_GAIN );
+        return 2 / ( 1 + exp ( -2 * sample ) ) - 1;
     }
-    struct Arpeggiator {
-        bool isActive = false;
-        bool trigger = false;
-        uint8_t range = 0;
-        uint8_t index = 1;
-        int8_t indexIncrement = 1;
+    struct Arpeggiator
+    {
+        bool     isActive          = false;
+        bool     trigger           = false;
+        uint8_t  range             = 0;
+        uint8_t  index             = 1;
+        int8_t   indexIncrement    = 1;
         uint32_t arpStepsInSamples = 8000;
         uint32_t arpStepsRemaining = arpStepsInSamples;
-        void advance() {
-            if (!isActive) return;
+        void     advance()
+        {
+            if ( !isActive )
+                return;
 
-            if (index >= range) {
-                index = range;
+            if ( index >= range )
+            {
+                index          = range;
                 indexIncrement = -1;
             }
-            if (index <= 0) {
-                index = 0;
+            if ( index <= 0 )
+            {
+                index          = 0;
                 indexIncrement = 1;
             }
-            if (arpStepsInSamples > 0) {
-                if (arpStepsRemaining > 0) {
+            if ( arpStepsInSamples > 0 )
+            {
+                if ( arpStepsRemaining > 0 )
+                {
                     arpStepsRemaining--;
-                } else {
+                }
+                else
+                {
                     arpStepsRemaining = arpStepsInSamples;
-                    trigger = true;
+                    trigger           = true;
                     index += indexIncrement;
                 }
             }
         }
-        int getIndex(int voicingSize) {
-            return index % voicingSize;
-        }
-        int getOctave(int voicingSize) {
+        int getIndex ( int voicingSize ) { return index % voicingSize; }
+        int getOctave ( int voicingSize )
+        {
             int octave = index / voicingSize;
-            if (range > 0 || arpStepsInSamples > 0) octave -= 1;
+            if ( range > 0 || arpStepsInSamples > 0 )
+                octave -= 1;
             return octave;
         }
     } arpeggiator;
 
-    PitchTracker*       pt;
-    EnvelopeFollower*   ef;
-    MicrotrackerMoog*   filterL;
-    MicrotrackerMoog*   filterR;
+    PitchTracker*     pt;
+    EnvelopeFollower* ef;
+    MicrotrackerMoog* filterL;
+    MicrotrackerMoog* filterR;
 
     // https://www.desmos.com/calculator/lw0xsmwglr
-    float getCurve(float v, float max, float curve, bool scaled) {
+    float getCurve ( float v, float max, float curve, bool scaled )
+    {
         const float x = v / max;
         const float b = 1.01f;
-        const float a = b / (curve - b) + 2.f;
-        float y = (a - b) * x / (a * x - b);
-        if (scaled) y *= max;
+        const float a = b / ( curve - b ) + 2.f;
+        float       y = ( a - b ) * x / ( a * x - b );
+        if ( scaled )
+            y *= max;
         return y;
     }
 
-    MidiEvent packEvent(uint8_t status, uint8_t data1, uint8_t data2, uint16_t offset) {
+    MidiEvent packEvent ( uint8_t status, uint8_t data1, uint8_t data2, uint16_t offset )
+    {
         MidiEvent ev;
-        ev.frame = offset;
-        ev.size = 3;
+        ev.frame   = offset;
+        ev.size    = 3;
         ev.data[0] = status;
         ev.data[1] = data1;
         ev.data[2] = data2;
         return ev;
     }
 
-
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEwisynth)
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR ( PluginEwisynth )
 };
 
-struct Preset {
+struct Preset
+{
     const char* name;
-    float params[PluginEwisynth::CONTROL_NR];
+    float       params[PluginEwisynth::CONTROL_NR];
 };
 
 const Preset factoryPresets[] = {
@@ -261,10 +261,10 @@ const Preset factoryPresets[] = {
     //}
 };
 
-const uint presetCount = sizeof(factoryPresets) / sizeof(Preset);
+const uint presetCount = sizeof ( factoryPresets ) / sizeof ( Preset );
 
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 
-#endif  // #ifndef PLUGIN_EWISYNTH_H
+#endif // #ifndef PLUGIN_EWISYNTH_H
