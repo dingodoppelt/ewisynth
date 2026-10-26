@@ -18,7 +18,7 @@
 #
 ######################################################################
 
-EWISYNTH_VERSION = dd577d64340f39cdf5b8f6106cfcdd8102e5b1a7
+EWISYNTH_VERSION = dpf
 EWISYNTH_SITE = https://github.com/dingodoppelt/ewisynth.git
 EWISYNTH_SITE_METHOD = git
 
