@@ -149,6 +149,7 @@ private:
     float                   pitchFactor() { return powf ( freqRatio(), exponent() ); }
     float                   currPulseWidth = .5f;
     float                   currPressure   = 0.f;
+    float                   currCutoff     = 0.f;
     float                   currShape      = 0.f;
     float                   lastPhase      = 0.f;
     VariableShapeOscillator SAWosc[MAX_POLYPHONY];

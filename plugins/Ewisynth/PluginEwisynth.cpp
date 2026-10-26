@@ -461,20 +461,16 @@ void PluginEwisynth::setParameterValue ( uint32_t index, float value )
     case CONTROL_PRESSURE:
         currPressure   = getCurve ( value, 127.f, getParameterValue ( CONTROL_CURVE ), false );
         currPulseWidth = getCurve ( value, 127.f, getParameterValue ( CONTROL_PW_CURVE ), false ) / 2.f + .5f; // limit pulse width to .5 - 1.
+        currCutoff = getCurve ( value / 127.f * MAX_FILTER_CUTOFF, MAX_FILTER_CUTOFF, getParameterValue ( CONTROL_FILT_CURVE ), true );
+        if ( filterL != nullptr && filterR != nullptr )
+        {
+            filterL->SetCutoff ( currCutoff );
+            filterR->SetCutoff ( currCutoff );
+        }
         break;
     case CONTROL_RMS_LEN:
         if ( ef != nullptr )
             ef->init ( (uint16_t) value );
-        break;
-    case CONTROL_FILT_CURVE:
-        value = getParameterValue ( CONTROL_FILT_CUTOFF );
-        // fall through to next case so take the correct value
-        [[fallthrough]];
-    case CONTROL_FILT_CUTOFF:
-        if ( filterL != nullptr )
-            filterL->SetCutoff ( getCurve ( value, MAX_FILTER_CUTOFF, getParameterValue ( CONTROL_FILT_CURVE ), true ) );
-        if ( filterR != nullptr )
-            filterR->SetCutoff ( getCurve ( value, MAX_FILTER_CUTOFF, getParameterValue ( CONTROL_FILT_CURVE ), true ) );
         break;
     case CONTROL_FILT_RESO:
         if ( filterL != nullptr )
@@ -514,7 +510,7 @@ void PluginEwisynth::activate()
 void PluginEwisynth::run ( const float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount )
 {
 
-    const float normalizedCutoff = getParameterValue ( CONTROL_FILT_CUTOFF ) / (float) MAX_FILTER_CUTOFF;
+    const float normalizedCutoff = getParameterValue ( CONTROL_PRESSURE ) / (float) MAX_FILTER_CUTOFF;
     // get the left and right audio outputs
     float* const outL = outputs[0];
     float* const outR = outputs[1];
