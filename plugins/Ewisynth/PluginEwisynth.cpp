@@ -320,8 +320,8 @@ void PluginEwisynth::initParameter ( uint32_t index, Parameter& parameter )
         parameter.hints      = kParameterIsAutomatable;
         parameter.name       = "Filter Cutoff Frequency";
         parameter.symbol     = "lpfCutoff";
-        parameter.ranges.def = 0.f;
-        parameter.ranges.min = 0.f;
+        parameter.ranges.def = (float) MAX_FILTER_CUTOFF;
+        parameter.ranges.min = 1.f; // must not be 0
         parameter.ranges.max = (float) MAX_FILTER_CUTOFF;
         break;
     case CONTROL_FILT_RESO:
@@ -452,7 +452,8 @@ void PluginEwisynth::setParameterValue ( uint32_t index, float value )
         }
         break;
     case CONTROL_CURVE:
-        // fall through to next case so take the correct value
+        [[fallthrough]];
+    case CONTROL_FILT_CUTOFF:
         [[fallthrough]];
     case CONTROL_PW_CURVE:
         value = getParameterValue ( CONTROL_PRESSURE );
@@ -461,7 +462,10 @@ void PluginEwisynth::setParameterValue ( uint32_t index, float value )
     case CONTROL_PRESSURE:
         currPressure   = getCurve ( value, 127.f, getParameterValue ( CONTROL_CURVE ), false );
         currPulseWidth = getCurve ( value, 127.f, getParameterValue ( CONTROL_PW_CURVE ), false ) / 2.f + .5f; // limit pulse width to .5 - 1.
-        currCutoff = getCurve ( value / 127.f * MAX_FILTER_CUTOFF, MAX_FILTER_CUTOFF, getParameterValue ( CONTROL_FILT_CURVE ), true );
+        currCutoff     = getCurve ( value / 127.f * getParameterValue ( CONTROL_FILT_CUTOFF ),
+                                    getParameterValue ( CONTROL_FILT_CUTOFF ),
+                                    getParameterValue ( CONTROL_FILT_CURVE ),
+                                    true );
         if ( filterL != nullptr && filterR != nullptr )
         {
             filterL->SetCutoff ( currCutoff );
